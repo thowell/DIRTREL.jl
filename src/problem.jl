@@ -7,7 +7,7 @@ mutable struct TrajectoryOptimizationProblem
     n::Int # states
     m::Int # controls
     T::Int # horizon
-    x0     # initial state
+    x1     # initial state
     xT     # goal state
     ul     # control lower bound
     uu     # control upper bound
@@ -16,11 +16,12 @@ mutable struct TrajectoryOptimizationProblem
     hl     # time step lower bound
     hu     # time step upper bound
     idx    # indices
+    model  # model
     integration # dynamics integration scheme
-    obj
+    obj    # objective
 end
 
-function init_problem(n,m,T,x0,xT,obj;
+function init_problem(n,m,T,x1,xT,model,obj;
         ul=-Inf*ones(m),
         uu=Inf*ones(m),
         xl=-Inf*ones(n),
@@ -31,6 +32,13 @@ function init_problem(n,m,T,x0,xT,obj;
         goal_state::Bool=true)
 
     idx = init_indices(n,m,T)
-
-    return TrajectoryOptimizationProblem(n,m,T,x0,xT,ul,uu,xl,xu,hl,hu,idx,integration,obj)
+    
+    return TrajectoryOptimizationProblem(n,m,T,
+        x1,xT,
+        ul,uu,
+        xl,xu,
+        hl,hu,
+        idx,
+        model,integration,
+        obj)
 end
