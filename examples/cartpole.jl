@@ -1,19 +1,62 @@
-mutable struct Cartpole{T}
-    mc::T # mass of the cart in kg (10)
-    mp::T # mass of the pole (point mass at the end) in kg
-    l::T  # length of the pole in m
-    g::T  # gravity m/s^2
-end
+include("../src/DIRTREL.jl")
+include("../dynamics/cartpole.jl")
 
-function dynamics(model::Cartpole, x, u)
-    H = @SMatrix [model.mc+model.mp model.mp*model.l*cos(x[2]); model.mp*model.l*cos(x[2]) model.mp*model.l^2]
-    C = @SMatrix [0.0 -model.mp*x[2]*model.l*sin(x[2]); 0.0 0.0]
-    G = @SVector [0.0, model.mp*model.g*model.l*sin(x[2])]
-    B = @SVector [1.0, 0.0]
-    qdd = SVector{2}(-H\(C*view(x,1:2) + G - B*u[1]))
+# Horizon
+T = 101
 
-    return @SVector [x[3],x[4],qdd[1],qdd[2]]
-end
+# Bounds
+uu = 10.0
+ul = -10.0
 
-model = Cartpole(1.0,0.2,0.5,9.81)
-n, m = 4,1
+tf0 = 5.0
+h0 = tf0/(T-1)
+hu = h0
+hl = h0
+
+# Initial and final states
+x1 = [0.0; 0.0; 0.0; 0.0]
+xT = [0.0; π; 0.0; 0.0]
+
+# Objective (minimum time)
+Q = [Diagonal(ones(n)) for t = 1:T]
+R = [Diagonal(0.1*ones(m)) for t = 1:T-1]
+c = 0.0
+obj = QuadraticTrackingObjective(Q,R,c,
+    [xT for t=1:T],[zeros(m) for t=1:T])
+
+# Problem
+prob = init_problem(n,m,T,x1,xT,model,obj,
+                    ul=[ul*ones(m) for t=1:T-1],
+                    uu=[uu*ones(m) for t=1:T-1],
+                    hl=[hl for t=1:T-1],
+                    hu=[hu for t=1:T-1],
+                    integration=midpoint,
+                    goal_constraint=true)
+
+# Initialization
+X0 = linear_interp(x1,xT,T)
+U0 = [0.01*rand(m) for t = 1:T-1]
+Z0 = pack(X0,U0,h0,prob)
+
+# MathOptInterface problem
+prob_moi = MOIProblem(prob)
+
+primal_bounds(prob_moi)
+constraint_bounds(prob_moi)
+MOI.eval_objective(prob_moi,Z0)
+MOI.eval_objective_gradient(prob_moi,zeros(prob_moi.n),Z0)
+MOI.eval_constraint(prob_moi,zeros(prob_moi.m),Z0)
+MOI.eval_constraint_jacobian(prob_moi,zeros(prob_moi.m*prob_moi.n),Z0)
+sparsity_jacobian(prob_moi)
+
+# Solve
+@time Z_sol = solve(prob_moi,Z0)
+
+# Unpack solution
+X_sol, U_sol, H_sol = unpack(Z_sol,prob)
+
+# Plot trajectories
+using Plots
+plot(Array(hcat(X_sol...))',width=2.0,xlabel="time step",ylabel="state",label="",title="Cartpole")
+plot(Array(hcat(U_sol...))',width=2.0,xlabel="time step",ylabel="control",label="",title="Cartpole")
+plot(Array(hcat(H_sol...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Cartpole")

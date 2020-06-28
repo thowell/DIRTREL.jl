@@ -12,6 +12,4 @@ function dynamics(model::Pendulum,x,u)
 end
 
 n,m = 2,1
-model = Pendulum(1.0,0.1,0.5,0.25,9.81) # inplace model
-
-model
+model = Pendulum(1.0,0.1,0.5,0.25,9.81)
