@@ -5,7 +5,7 @@ mutable struct Cartpole{T}
     g::T  # gravity m/s^2
 end
 
-function dynamics(model::Cartpole, x, u)
+function dynamics(model::Cartpole, x, u, w)
     H = @SMatrix [model.mc+model.mp model.mp*model.l*cos(x[2]); model.mp*model.l*cos(x[2]) model.mp*model.l^2]
     C = @SMatrix [0.0 -model.mp*x[2]*model.l*sin(x[2]); 0.0 0.0]
     G = @SVector [0.0, model.mp*model.g*model.l*sin(x[2])]

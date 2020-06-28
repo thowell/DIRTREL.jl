@@ -11,7 +11,7 @@ function dynamics_constraints!(c,Z,idx,n,m,T,model,integration)
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        c[(t-1)*n .+ (1:n)] = x⁺ - integration(model,x,u,h)
+        c[(t-1)*n .+ (1:n)] = x⁺ - integration(model,x,u,0.0,h)
 
         if t < T-1
             h⁺ = Z[idx.h[t+1]]
@@ -37,9 +37,9 @@ function dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integration)
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        dyn_x(z) = x⁺ - integration(model,z,u,h)
-        dyn_u(z) = x⁺ - integration(model,x,z,h)
-        dyn_h(z) = x⁺ - integration(model,x,u,z)
+        dyn_x(z) = x⁺ - integration(model,z,u,0.0,h)
+        dyn_u(z) = x⁺ - integration(model,x,z,0.0,h)
+        dyn_h(z) = x⁺ - integration(model,x,u,0.0,z)
         # dyn_x⁺(z) = z
         r_idx = (t-1)*n .+ (1:n)
         ∇c[r_idx,idx.x[t]] = ForwardDiff.jacobian(dyn_x,x)
@@ -73,9 +73,9 @@ function sparse_dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integratio
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        dyn_x(z) = x⁺ - integration(model,z,u,h)
-        dyn_u(z) = x⁺ - integration(model,x,z,h)
-        dyn_h(z) = x⁺ - integration(model,x,u,z)
+        dyn_x(z) = x⁺ - integration(model,z,u,0.0,h)
+        dyn_u(z) = x⁺ - integration(model,x,z,0.0,h)
+        dyn_h(z) = x⁺ - integration(model,x,u,0.0,z)
         # dyn_x⁺(z) = z
         # r_idx = (t-1)*n .+ (1:n)
         # ∇c[r_idx,idx.x[t]] = ForwardDiff.jacobian(dyn_x,x)

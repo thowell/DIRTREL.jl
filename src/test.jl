@@ -47,3 +47,15 @@ norm(c0 - c0_2)
 c_jac_2 = zero(c_jac)
 eval_constraint_jacobian!(c_jac_2,Z0,prob)
 norm(c_jac - c_jac_2)
+
+function g(x)
+    @SMatrix [x[1] 0.0 0.0; 0.0 x[2] 0.0; 0.0 0.0 x[3]]
+end
+
+x0 = rand(3)
+g(x0)
+
+chol_g(x) = vec(Array(cholesky(g(x)))*x)
+chol_g(x0)
+
+ForwardDiff.jacobian(chol_g,x0)

@@ -6,7 +6,7 @@ mutable struct Pendulum{T}
     g::T  # gravity
 end
 
-function dynamics(model::Pendulum,x,u)
+function dynamics(model::Pendulum,x,u,w)
     @SVector [x[2],
               (u[1] - model.m*model.g*model.lc*sin(x[1]) - model.b*x[2])/model.I]
 end
