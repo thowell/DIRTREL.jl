@@ -15,7 +15,7 @@ prob = init_problem(n,m,T,x0,xT,model,obj)
 Z0 = ones(n*T + m*(T-1) + (T-1))
 objective(Z0,obj,prob.idx,T)
 obj_grad = zero(Z0)
-objective_gradient(obj_grad,Z0,obj,prob.idx,T)
+objective_gradient!(obj_grad,Z0,obj,prob.idx,T)
 
 tmp(z) = objective(z,obj,prob.idx,T)
 norm(ForwardDiff.gradient(tmp,Z0) - obj_grad)
@@ -30,3 +30,20 @@ dynamics_constraints_jacobian!(c_jac,Z0,prob.idx,n,m,T,prob.model,prob.integrati
 tmp2!(c,z) = dynamics_constraints!(c,z,prob.idx,n,m,T,prob.model,prob.integration)
 
 norm(vec(ForwardDiff.jacobian(tmp2!,c0,Z0)) - vec(c_jac))
+
+primal_bounds(prob)
+
+constraint_bounds(prob)
+
+eval_objective(prob,Z0)
+obj_grad_2 = zero(obj_grad)
+eval_objective_gradient!(obj_grad_2,Z0,prob)
+norm(obj_grad - obj_grad_2)
+
+c0_2 = zero(c0)
+eval_constraint!(c0_2,Z0,prob)
+norm(c0 - c0_2)
+
+c_jac_2 = zero(c_jac)
+eval_constraint_jacobian!(c_jac_2,Z0,prob)
+norm(c_jac - c_jac_2)

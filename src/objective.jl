@@ -29,7 +29,7 @@ function objective(Z,l::QuadraticTrackingObjective,idx,T)
     return s
 end
 
-function objective_gradient(∇l,Z,l::QuadraticTrackingObjective,idx,T)
+function objective_gradient!(∇l,Z,l::QuadraticTrackingObjective,idx,T)
     x_ref = l.x_ref
     u_ref = l.u_ref
     Q = l.Q

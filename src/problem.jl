@@ -2,8 +2,9 @@ include("../dynamics/pendulum.jl")
 
 # z = (x,u,h)
 # Z = [z1,...,zT-1,xT]
+abstract type Problem end
 
-mutable struct TrajectoryOptimizationProblem
+mutable struct TrajectoryOptimizationProblem <: Problem
     n::Int # states
     m::Int # controls
     T::Int # horizon
@@ -19,20 +20,21 @@ mutable struct TrajectoryOptimizationProblem
     model  # model
     integration # dynamics integration scheme
     obj    # objective
+    goal_constraint
 end
 
 function init_problem(n,m,T,x1,xT,model,obj;
-        ul=-Inf*ones(m),
-        uu=Inf*ones(m),
-        xl=-Inf*ones(n),
-        xu=Inf*ones(n),
-        hl=-Inf*ones(1),
-        hu=Inf*ones(1),
+        ul=[-Inf*ones(m) for t = 1:T-1],
+        uu=[Inf*ones(m) for t = 1:T-1],
+        xl=[-Inf*ones(n) for t = 1:T],
+        xu=[Inf*ones(n) for t = 1:T],
+        hl=[-Inf for t = 1:T-1],
+        hu=[Inf for t = 1:T-1],
         integration=midpoint,
-        goal_state::Bool=true)
+        goal_constraint::Bool=true)
 
     idx = init_indices(n,m,T)
-    
+
     return TrajectoryOptimizationProblem(n,m,T,
         x1,xT,
         ul,uu,
@@ -40,5 +42,68 @@ function init_problem(n,m,T,x1,xT,model,obj;
         hl,hu,
         idx,
         model,integration,
-        obj)
+        obj,
+        goal_constraint)
+end
+
+function primal_bounds(prob::TrajectoryOptimizationProblem)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+    idx = prob.idx
+
+    N = n*T + m*(T-1) + (T-1)
+
+    Zl = -Inf*ones(N)
+    Zu = Inf*ones(N)
+
+    for t = 1:T-1
+        Zl[idx.x[t]] = (t==1 ? prob.x1 : prob.xl[t])
+        Zl[idx.u[t]] = prob.ul[t]
+        Zl[idx.h[t]] = prob.hl[t]
+
+        Zu[idx.x[t]] = (t==1 ? prob.x1 : prob.xu[t])
+        Zu[idx.u[t]] = prob.uu[t]
+        Zu[idx.h[t]] = prob.hu[t]
+    end
+
+    Zl[idx.x[T]] = (prob.goal_constraint ? prob.xT : prob.xl[T])
+    Zu[idx.x[T]] = (prob.goal_constraint ? prob.xT : prob.xu[T])
+
+    return Zl, Zu
+end
+
+function constraint_bounds(prob::TrajectoryOptimizationProblem)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+    idx = prob.idx
+
+    M = n*(T-1) + (T-2)
+
+    cl = zeros(M)
+    cu = zeros(M)
+
+    return cl, cu
+end
+
+function eval_objective(prob::TrajectoryOptimizationProblem,Z)
+    objective(Z,prob.obj,prob.idx,prob.T)
+end
+
+function eval_objective_gradient!(∇l,Z,prob::TrajectoryOptimizationProblem)
+    objective_gradient!(∇l,Z,prob.obj,prob.idx,prob.T)
+    return nothing
+end
+
+function eval_constraint!(c,Z,prob::TrajectoryOptimizationProblem)
+    dynamics_constraints!(c,Z,
+        prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+    return nothing
+end
+
+function eval_constraint_jacobian!(∇c,Z,prob::TrajectoryOptimizationProblem)
+    dynamics_constraints_jacobian!(∇c,Z,
+        prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+    return nothing
 end
