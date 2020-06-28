@@ -40,6 +40,7 @@ tf0 = 2.0
 h0 = tf0/(T-1)
 Z0 = pack(X0,U0,h0,prob)
 
+# MathOptInterface problem
 prob_moi = MOIProblem(prob)
 
 primal_bounds(prob_moi)
@@ -51,7 +52,7 @@ MOI.eval_constraint_jacobian(prob_moi,zeros(prob_moi.m*prob_moi.n),Z0)
 sparsity_jacobian(prob_moi)
 
 # Solve
-Z_sol = solve(prob_moi,Z0)
+@time Z_sol = solve(prob_moi,Z0)
 
 # Unpack solution
 X_sol, U_sol, H_sol = unpack(Z_sol,prob)
@@ -59,3 +60,23 @@ X_sol, U_sol, H_sol = unpack(Z_sol,prob)
 # Plot trajectories
 plot(Array(hcat(X_sol...))',width=2.0,xlabel="time step",ylabel="state",label="",title="Pendulum")
 plot(Array(hcat(U_sol...))',width=2.0,xlabel="time step",ylabel="control",label="",title="Pendulum")
+
+
+# sparsity = sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
+#
+# jac_sparse = zeros(length(sparsity))
+# Z0 = rand(prob_moi.n)
+# sparse_dynamics_constraints_jacobian!(jac_sparse,Z0,prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+#
+# jac_sparse
+# using SparseArrays
+# JAC = zeros(prob_moi.m,prob_moi.n)
+#
+# for i = 1:length(sparsity)
+#     JAC[sparsity[i]...] = jac_sparse[i]
+# end
+# JAC
+#
+# C = zeros(prob_moi.m,prob_moi.n)
+# dynamics_constraints_jacobian!(C,Z0,prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+# norm(vec(C) - vec(JAC))

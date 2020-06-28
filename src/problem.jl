@@ -143,7 +143,11 @@ function eval_constraint!(c,Z,prob::TrajectoryOptimizationProblem)
 end
 
 function eval_constraint_jacobian!(∇c,Z,prob::TrajectoryOptimizationProblem)
-    dynamics_constraints_jacobian!(∇c,Z,
+    sparse_dynamics_constraints_jacobian!(∇c,Z,
         prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
     return nothing
+end
+
+function sparsity_jacobian(prob::TrajectoryOptimizationProblem)
+    sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
 end

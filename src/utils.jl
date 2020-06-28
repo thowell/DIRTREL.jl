@@ -10,3 +10,21 @@ function linear_interp(x0,xf,T)
 
     return X
 end
+
+function row_col!(row,col,r,c)
+    for cc in c
+        for rr in r
+            push!(row,convert(Int,rr))
+            push!(col,convert(Int,cc))
+        end
+    end
+    return row, col
+end
+
+function row_col_cartesian!(row,col,r,c)
+    for i = 1:length(r)
+        push!(row,convert(Int,r[i]))
+        push!(col,convert(Int,c[i]))
+    end
+    return row, col
+end

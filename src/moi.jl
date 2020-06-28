@@ -27,39 +27,12 @@ function MOI.eval_constraint(prob::MOI.AbstractNLPEvaluator,g,x)
 end
 
 function MOI.eval_constraint_jacobian(prob::MOI.AbstractNLPEvaluator, jac, x)
-    eval_constraint_jacobian!(reshape(jac,prob.m,prob.n),x,prob.prob)
+    eval_constraint_jacobian!(jac,x,prob.prob)
     return nothing
 end
 
-function row_col!(row,col,r,c)
-    for cc in c
-        for rr in r
-            push!(row,convert(Int,rr))
-            push!(col,convert(Int,cc))
-        end
-    end
-    return row, col
-end
-
-function row_col_cartesian!(row,col,r,c)
-    for i = 1:length(r)
-        push!(row,convert(Int,r[i]))
-        push!(col,convert(Int,c[i]))
-    end
-    return row, col
-end
-
 function sparsity_jacobian(prob::MOI.AbstractNLPEvaluator)
-
-    row = []
-    col = []
-
-    r = 1:prob.m
-    c = 1:prob.n
-
-    row_col!(row,col,r,c)
-
-    return collect(zip(row,col))
+    sparsity_jacobian(prob.prob)
 end
 
 MOI.features_available(prob::MOI.AbstractNLPEvaluator) = [:Grad, :Jac]
@@ -68,7 +41,7 @@ MOI.jacobian_structure(prob::MOI.AbstractNLPEvaluator) = sparsity_jacobian(prob)
 MOI.hessian_lagrangian_structure(prob::MOI.AbstractNLPEvaluator) = []
 MOI.eval_hessian_lagrangian(prob::MOI.AbstractNLPEvaluator, H, x, σ, μ) = nothing
 
-function solve_ipopt(prob::MOI.AbstractNLPEvaluator,x0)
+function solve(prob::MOI.AbstractNLPEvaluator,x0)
     x_l, x_u = primal_bounds(prob)
     c_l, c_u = constraint_bounds(prob)
 
