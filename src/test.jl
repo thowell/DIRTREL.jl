@@ -3,14 +3,14 @@ include("DIRTREL.jl")
 T = 10
 Q = [Matrix(1.0*I,n,n) for t = 1:T]
 R = [Matrix(1.0*I,m,m) for t = 1:T-1]
-
+c = 1.0
 x_ref = [zeros(n) for t = 1:T]
 u_ref = [zeros(m) for t = 1:T-1]
-obj = QuadraticTrackingObjective(Q,R,x_ref,u_ref)
+obj = QuadraticTrackingObjective(Q,R,c,x_ref,u_ref)
 
-x0 = rand(n)
+x1 = rand(n)
 xT = rand(n)
-prob = init_problem(n,m,T,x0,xT,model,obj)
+prob = init_problem(n,m,T,x1,xT,model,obj)
 
 Z0 = ones(n*T + m*(T-1) + (T-1))
 objective(Z0,obj,prob.idx,T)

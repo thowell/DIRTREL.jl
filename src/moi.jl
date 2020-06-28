@@ -27,7 +27,7 @@ function MOI.eval_constraint(prob::MOI.AbstractNLPEvaluator,g,x)
 end
 
 function MOI.eval_constraint_jacobian(prob::MOI.AbstractNLPEvaluator, jac, x)
-    eval_constraint_jacobian!(jac,x,prob.prob)
+    eval_constraint_jacobian!(reshape(jac,prob.m,prob.n),x,prob.prob)
     return nothing
 end
 
@@ -54,8 +54,8 @@ function sparsity_jacobian(prob::MOI.AbstractNLPEvaluator)
     row = []
     col = []
 
-    r = 1:prob.m_nlp
-    c = 1:prob.n_nlp
+    r = 1:prob.m
+    c = 1:prob.n
 
     row_col!(row,col,r,c)
 

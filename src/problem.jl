@@ -46,6 +46,46 @@ function init_problem(n,m,T,x1,xT,model,obj;
         goal_constraint)
 end
 
+function pack(X0,U0,h0,prob::TrajectoryOptimizationProblem)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+
+    Z0 = zeros(n*T + m*(T-1) + (T-1))
+    for t = 1:T-1
+        Z0[(t-1)*(n+m+1) .+ (1:n)] = X0[t]
+        Z0[(t-1)*(n+m+1)+n .+ (1:m)] = U0[t]
+        Z0[(t-1)*(n+m+1)+n+m + 1] = h0
+    end
+    Z0[(T-1)*(n+m+1) .+ (1:n)] = X0[T]
+
+    return Z0
+end
+
+function unpack(Z0,prob::TrajectoryOptimizationProblem)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+
+    X = [Z0[(t-1)*(n+m+1) .+ (1:n)] for t = 1:T]
+    U = [Z0[(t-1)*(n+m+1)+n .+ (1:m)] for t = 1:T-1]
+    H = [Z0[(t-1)*(n+m+1)+n+m + 1] for t = 1:T-1]
+
+    return X, U, H
+end
+
+function MOIProblem(prob::TrajectoryOptimizationProblem)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+
+    N = n*T + m*(T-1) + (T-1)
+    M = n*(T-1) + (T-2)
+
+    return MOIProblem(N,M,prob,false)
+end
+
+
 function primal_bounds(prob::TrajectoryOptimizationProblem)
     n = prob.n
     m = prob.m

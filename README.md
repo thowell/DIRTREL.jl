@@ -14,10 +14,11 @@ subject to      x+ = f(x,u,h)
                 xl < x < xu
                 ul < uw < uu
                 xl < xw < xu
-                hl < h < hu             
+                hl < h < hu,             
 ```
 where for simplicity, all constraints (apart from dynamics) are linear bounds
 and the object is,
 ```
-l(X,U) = (x-xT)'QT(x-xT) + h Σ {(x-xt)'Qt(x-xt) + (u-ut)'Rt(u-ut)}
+l(X,U) = (x-xT)'QT(x-xT) + h Σ {(x-xt)'Qt(x-xt) + (u-ut)'Rt(u-ut) + c},
 ```
+a quadratic tracking cost function.
