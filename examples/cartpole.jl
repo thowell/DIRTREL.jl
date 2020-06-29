@@ -39,7 +39,7 @@ U0 = [0.01*rand(m) for t = 1:T-1]
 Z0 = pack(X0,U0,h0,prob)
 
 # MathOptInterface problem
-prob_moi = MOIProblem(prob)
+prob_moi = init_MOIProblem(prob)
 
 primal_bounds(prob_moi)
 constraint_bounds(prob_moi)

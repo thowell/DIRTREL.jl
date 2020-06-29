@@ -8,6 +8,8 @@ mutable struct TrajectoryOptimizationProblem <: Problem
     n::Int # states
     m::Int # controls
     T::Int # horizon
+    N::Int # number of decision variables
+    M::Int # number of constraints
     x1     # initial state
     xT     # goal state
     ul     # control lower bound
@@ -34,8 +36,10 @@ function init_problem(n,m,T,x1,xT,model,obj;
         goal_constraint::Bool=true)
 
     idx = init_indices(n,m,T)
+    N = n*T + m*(T-1) + (T-1)
+    M = n*(T-1) + (T-2)
 
-    return TrajectoryOptimizationProblem(n,m,T,
+    return TrajectoryOptimizationProblem(n,m,T,N,M,
         x1,xT,
         ul,uu,
         xl,xu,
@@ -51,7 +55,7 @@ function pack(X0,U0,h0,prob::TrajectoryOptimizationProblem)
     m = prob.m
     T = prob.T
 
-    Z0 = zeros(n*T + m*(T-1) + (T-1))
+    Z0 = zeros(prob.N)
     for t = 1:T-1
         Z0[(t-1)*(n+m+1) .+ (1:n)] = X0[t]
         Z0[(t-1)*(n+m+1)+n .+ (1:m)] = U0[t]
@@ -74,15 +78,8 @@ function unpack(Z0,prob::TrajectoryOptimizationProblem)
     return X, U, H
 end
 
-function MOIProblem(prob::TrajectoryOptimizationProblem)
-    n = prob.n
-    m = prob.m
-    T = prob.T
-
-    N = n*T + m*(T-1) + (T-1)
-    M = n*(T-1) + (T-2)
-
-    return MOIProblem(N,M,prob,false)
+function init_MOIProblem(prob::TrajectoryOptimizationProblem)
+    return MOIProblem(prob.N,prob.M,prob,false)
 end
 
 
@@ -92,7 +89,7 @@ function primal_bounds(prob::TrajectoryOptimizationProblem)
     T = prob.T
     idx = prob.idx
 
-    N = n*T + m*(T-1) + (T-1)
+    N = prob.N
 
     Zl = -Inf*ones(N)
     Zu = Inf*ones(N)
@@ -118,8 +115,7 @@ function constraint_bounds(prob::TrajectoryOptimizationProblem)
     m = prob.m
     T = prob.T
     idx = prob.idx
-
-    M = n*(T-1) + (T-2)
+    M = prob.M
 
     cl = zeros(M)
     cu = zeros(M)

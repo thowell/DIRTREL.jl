@@ -7,14 +7,14 @@ The following robust trajectory optimization problem is solved,
 minimize        lw(X,U) + l(X,U)
   X,U,H
 subject to      x+ = f(x,u,h)
-                h⁺ = h
+                h+ = h
                 x1 = x(0)
                 xT = x(T)
-                ul < u < uu
-                xl < x < xu
-                ul < uw < uu
-                xl < xw < xu
-                hl < h < hu,             
+                ul <= u <= uu
+                xl <= x <= xu
+                ul <= uw <= uu
+                xl <= xw <= xu
+                hl <= h <= hu,             
 ```
 where for simplicity, all constraints (apart from dynamics) are linear bounds
 and the object is,

@@ -1,3 +1,9 @@
+# principal square root of matrix A
+function matrix_sqrt(A)
+    e = eigen(A)
+    return e.vectors*Diagonal(sqrt.(e.values))*inv(e.vectors)
+end
+
 # linear interpolation
 function linear_interp(x0,xf,T)
     n = length(x0)

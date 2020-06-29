@@ -6,14 +6,14 @@ mutable struct Pendulum{T}
     g::T  # gravity
 end
 
-function dynamics(model::Pendulum,x,u,w)
-    @SVector [x[2],
-              (u[1] - model.m*model.g*model.lc*sin(x[1]) - model.b*x[2])/model.I]
-end
+# function dynamics(model::Pendulum,x,u,w)
+#     @SVector [x[2],
+#               (u[1] - model.m*model.g*model.lc*sin(x[1]) - model.b*x[2])/model.I]
+# end
 
 function dynamics(model::Pendulum,x,u,w)
     @SVector [x[2],
-              (u[1] - model.m*model.g*model.lc*sin(x[1]) - (model.b + model.b*w[1])*x[2])/model.I]
+              u[1]/((model.m + w[1])*model.lc*model.lc) - model.g*sin(x[1])/model.lc - model.b*x[2]/((model.m + w[1])*model.lc*model.lc)]
 end
 
 n,m = 2,1
