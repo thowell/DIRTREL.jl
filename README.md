@@ -35,8 +35,10 @@ The [pendulum](https://github.com/thowell/DIRTREL.jl/blob/master/examples/pendul
 
 ![](examples/results/pendulum_control.png)
 
+*Note: Because the open-source solver Ipopt is used in place of SNOPT, the exact problem being solved is slightly modified to produced similar qualitative behavior.
+
 ## TODO
-- [ ] linear state bounds
-- [ ] general constraints
-- [ ] analytical derivatives
-- [ ] SNOPT
+- [ ] add linear robust state bounds
+- [ ] add general robust constraints
+- [ ] replace ForwardDiff with analytical derivatives
+- [ ] compare results with SNOPT
