@@ -25,7 +25,7 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Disturbances
 nw = 1
 w0 = zeros(nw)
-E1 = Diagonal(1.0e-6*ones(n))
+E1 = Diagonal(1.0e-8*ones(n))
 H1 = zeros(n,nw)
 D = Diagonal([0.2^2]) # NOTE: this is modified from paper
 
@@ -45,7 +45,11 @@ prob = init_problem(n,m,T,x1,xT,model,obj,
                     hu=[hu for t=1:T-1],
                     integration=midpoint,
                     goal_constraint=true)
-prob_robust = RobustProblem(prob,nw,w0,Q_lqr,R_lqr,Qw,Rw,E1,H1,D,2*(2*m*m*(T-1)))
+prob_robust = RobustProblem(prob,nw,w0,
+    Q_lqr,R_lqr,
+    Qw,Rw,
+    E1,H1,D,
+    num_robust_control_bounds(m,T))
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
@@ -60,7 +64,7 @@ Z0 = pack(X0,U0,h0,prob)
 
 # Solve
 @time Z_nominal = solve(prob_moi,copy(Z0))
-@time Z_robust = solve(prob_robust_moi,copy(Z0)) # warm start DIRTREL solve
+@time Z_robust = solve(prob_robust_moi,copy(Z0))
 
 # Unpack solution
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
@@ -81,12 +85,16 @@ for t = 2:T
 end
 
 # Control
-plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,title="Pendulum",xlabel="time (s)",ylabel="control",label="nominal",legend=:topleft)
-plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,width=2.0,label="robust")
+plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',
+    color=:purple,width=2.0,title="Pendulum",xlabel="time (s)",
+    ylabel="control",label="nominal",linelegend=:bottomright,
+    linetype=:steppost)
+plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',
+    color=:orange,width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 
 # States
-plt = plot(t_nominal,hcat(X_nominal...)[1,:],color=:purple,width=2.0,xlabel="time (s)",ylabel="state",label="θ (nominal)",title="Pendulum",legend=:topleft)
+plt = plot(t_nominal,hcat(X_nominal...)[1,:],color=:purple,width=2.0,xlabel="time (s)",ylabel="state",label="θ (nominal)",title="Pendulum",legend=:bottomright)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ (nominal)")
 plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,label="θ (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")

@@ -27,7 +27,7 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Disturbances
 nw = 1
 w0 = zeros(nw)
-E1 = Diagonal(1.0e-6*ones(n))
+E1 = Diagonal(1.0e-8*ones(n))
 H1 = zeros(n,nw)
 D = Diagonal([4.0])
 
@@ -48,7 +48,11 @@ prob = init_problem(n,m,T,x1,xT,model,obj,
                     integration=midpoint,
                     goal_constraint=true)
 
-prob_robust = RobustProblem(prob,nw,w0,Q_lqr,R_lqr,Qw,Rw,E1,H1,D,2*(2*m*m*(T-1)))
+prob_robust = RobustProblem(prob,nw,w0,
+    Q_lqr,R_lqr,
+    Qw,Rw,
+    E1,H1,D,
+    num_robust_control_bounds(m,T))
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
@@ -56,7 +60,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
 X0 = linear_interp(x1,xT,T)
-U0 = [0.01*rand(m) for t = 1:T-1]
+U0 = [0.001*rand(m) for t = 1:T-1]
 Z0 = pack(X0,U0,h0,prob)
 
 # Solve
@@ -80,8 +84,11 @@ end
 
 using Plots
 # Control
-plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,title="Cartpole",xlabel="time (s)",ylabel="control",label="nominal",legend=:topright)
-plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,width=2.0,label="robust")
+plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,
+    title="Cartpole",xlabel="time (s)",ylabel="control",label="nominal",
+    legend=:topright,linetype=:steppost)
+plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
+    width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
 
 # States

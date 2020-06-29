@@ -36,3 +36,7 @@ function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
     end
     return nothing
 end
+
+function num_robust_control_bounds(m,T)
+    return 2*(2*m*m*(T-1))
+end
