@@ -29,13 +29,17 @@ git clone https://github.com/thowell/DIRTREL.jl
 ```
 
 ## Examples
-The [pendulum](https://github.com/thowell/DIRTREL.jl/blob/master/examples/pendulum_robust.jl) and [cartpole](https://github.com/thowell/DIRTREL.jl/blob/master/examples/cartpole_robust.jl) examples from the paper are reproduced* using [Ipopt](https://github.com/coin-or/Ipopt)
+The [pendulum](https://github.com/thowell/DIRTREL.jl/blob/master/examples/pendulum_robust.jl) and [cartpole](https://github.com/thowell/DIRTREL.jl/blob/master/examples/cartpole_robust.jl) examples from the paper are reproduced*.
 
+### Pendulum
 ![](examples/results/pendulum_state.png)
-
 ![](examples/results/pendulum_control.png)
 
-*Note: Because the open-source solver Ipopt is used in place of SNOPT, the exact problem being solved is slightly modified to produced similar qualitative behavior.
+### Cartpole
+![](examples/results/cartpole_state.png)
+![](examples/results/cartpole_control.png)
+
+*Note: Because the open-source non-convex solver [Ipopt](https://github.com/coin-or/Ipopt) is used in place of [SNOPT](https://web.stanford.edu/group/SOL/snopt.htm), the optimized trajectories differ slightly, but the qualitative behavior is similar.
 
 ## TODO
 - [ ] add linear robust state bounds

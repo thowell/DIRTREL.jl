@@ -22,6 +22,7 @@ function compute_uw(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,
     return uw
 end
 
+# Robust linear control bounds
 function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     # uw - uu <= 0, ul - uw <= 0
     # M = 2*(2*m*m*(T-1))

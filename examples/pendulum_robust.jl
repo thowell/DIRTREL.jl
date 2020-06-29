@@ -25,9 +25,9 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Disturbances
 nw = 1
 w0 = zeros(nw)
-E1 = Diagonal(1.0e-8*ones(n))
+E1 = Diagonal(1.0e-6*ones(n))
 H1 = zeros(n,nw)
-D = Diagonal([0.8^2]) # NOTE: this is modified from paper
+D = Diagonal([0.2^2]) # NOTE: this is modified from paper
 
 # TVLQR cost
 Q_lqr = [t < T ? Diagonal([10.0;1.0]) : Diagonal([100.0; 100.0]) for t = 1:T]
@@ -59,12 +59,12 @@ h0 = tf0/(T-1)
 Z0 = pack(X0,U0,h0,prob)
 
 # Solve
-@time Z_nominal = solve(prob_moi,Z0)
-@time Z_robust = solve(prob_robust_moi,Z_nominal) # warm start DIRTREL solve
+@time Z_nominal = solve(prob_moi,copy(Z0))
+@time Z_robust = solve(prob_robust_moi,copy(Z0)) # warm start DIRTREL solve
 
 # Unpack solution
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
-X_robust, U_robust, H_robust = unpack(Z_sol,prob)
+X_robust, U_robust, H_robust = unpack(Z_robust,prob)
 
 display("time (nominal): $(sum(H_nominal))s")
 display("time (robust): $(sum(H_robust))s")
@@ -88,6 +88,6 @@ savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],color=:purple,width=2.0,xlabel="time (s)",ylabel="state",label="θ (nominal)",title="Pendulum",legend=:topleft)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ (nominal)")
-plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,xlabel="time (s)",ylabel="state",label="θ (robust)",title="Pendulum")
+plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,label="θ (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_state.png"))
