@@ -78,7 +78,7 @@ function unpack(Z0,prob::TrajectoryOptimizationProblem)
     return X, U, H
 end
 
-function init_MOIProblem(prob::TrajectoryOptimizationProblem)
+function init_MOI_Problem(prob::TrajectoryOptimizationProblem)
     return MOIProblem(prob.N,prob.M,prob,false)
 end
 

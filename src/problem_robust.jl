@@ -11,31 +11,6 @@ mutable struct RobustProblem <: Problem
     D
     M_robust
 end
-#
-# function objective_robust(Z,prob_robust::RobustProblem)
-#     prob = prob_robust.prob
-#     return robust_cost(Z,
-#                         prob.n,prob.m,prob.T,prob.idx,
-#                         prob_robust.nw,prob_robust.w0,
-#                         prob.model,prob.integration,
-#                         prob_robust.Q_lqr,prob_robust.R_lqr,
-#                         prob_robust.Qw,prob_robust.Rw,
-#                         prob_robust.E1,prob_robust.H1,prob_robust.D)
-# end
-#
-# function objective_robust_gradient!(∇lw,Z,prob_robust::RobustProblem)
-#     #TODO replace with analytical expression
-#     prob = prob_robust.prob
-#     tmp(z) = robust_cost(z,
-#                         prob.n,prob.m,prob.T,prob.idx,
-#                         prob_robust.nw,prob_robust.w0,
-#                         prob.model,prob.integration,
-#                         prob_robust.Q_lqr,prob_robust.R_lqr,
-#                         prob_robust.Qw,prob_robust.Rw,
-#                         prob_robust.E1,prob_robust.H1,prob_robust.D)
-#     ∇lw .+= ForwardDiff.gradient(tmp,Z)
-#     return nothing
-# end
 
 function constraints_robust!(cw,Z,prob_robust::RobustProblem)
     prob = prob_robust.prob
@@ -56,7 +31,7 @@ function constraints_robust_jacobian!(∇cw,Z,prob_robust::RobustProblem)
                 prob_robust.Q_lqr,prob_robust.R_lqr,
                 prob_robust.Qw,prob_robust.Rw,
                 prob_robust.E1,prob_robust.H1,prob_robust.D)
-    cw = zeros(2*(2*prob.m*prob.m*(prob.T-1))) #TODO fix
+    cw = zeros(prob_robust.M_robust) #TODO fix
     ForwardDiff.jacobian!(∇cw,tmp!,cw,Z)
     return nothing
 end
@@ -70,7 +45,7 @@ function init_MOI_RobustProblem(prob_robust::RobustProblem)
 
     N = prob.N
     M = prob.M
-    M_robust = 2*(2*prob.m*prob.m*(prob.T-1)) # control bounds with disturbances
+    M_robust = prob_robust.M_robust # control bounds with disturbances
 
     return MOIProblem(N,M+M_robust,prob_robust,false)
 end
@@ -87,8 +62,8 @@ function constraint_bounds(prob_robust::RobustProblem)
     T = prob.T
     idx = prob.idx
 
-    M = n*(T-1) + (T-2)
-    M_robust = 2*(2*prob.m*prob.m*(prob.T-1))
+    M = prob.M
+    M_robust = prob_robust.M_robust
     cl, cu = constraint_bounds(prob)
     cl_robust = -Inf*ones(M_robust)
     cu_robust = zeros(M_robust)
@@ -175,8 +150,7 @@ function eval_constraint_jacobian!(∇c,Z,prob_robust::RobustProblem)
         prob_robust.Qw,prob_robust.Rw,
         prob_robust.E1,prob_robust.H1,prob_robust.D)
     c_tmp = zeros(prob_robust.M_robust)
-    ForwardDiff.jacobian!(reshape(view(∇c,L .+ (1:prob_robust.M_robust*prob.N)),
-        prob_robust.M_robust,prob.N),tmp!,c_tmp,Z)
+    ∇c[L .+ (1:prob_robust.M_robust*prob.N)] .= vec(ForwardDiff.jacobian(tmp!,c_tmp,Z))
 
     return nothing
 end
@@ -186,4 +160,5 @@ function sparsity_jacobian(prob_robust::RobustProblem)
     sparsity_dynamics = sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
     sparsity_robust = sparsity_robust_constraints(prob_robust,shift=prob.M)
     return vcat(sparsity_dynamics...,sparsity_robust)
+    # return sparsity_dynamics
 end

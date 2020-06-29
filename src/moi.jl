@@ -49,8 +49,10 @@ function solve(prob::MOI.AbstractNLPEvaluator,x0)
     block_data = MOI.NLPBlockData(nlp_bounds,prob,true)
 
     solver = Ipopt.Optimizer()
-    solver.options["max_iter"] = 5000
+    # solver.options["max_iter"] = 5000
     # solver.options["tol"] = 1.0e-3
+    # solver.options["constr_viol_tol"] = 1.0e-2
+
 
     x = MOI.add_variables(solver,prob.n)
 

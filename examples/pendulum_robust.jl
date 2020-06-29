@@ -22,12 +22,12 @@ c = 1.0
 obj = QuadraticTrackingObjective(Q,R,c,
     [zeros(n) for t=1:T],[zeros(m) for t=1:T])
 
-# disturbances
+# Disturbances
 nw = 1
-w0 = ones(nw)
-E1 = Diagonal(1.0e-6*ones(n))
+w0 = zeros(nw)
+E1 = Diagonal(1.0e-8*ones(n))
 H1 = zeros(n,nw)
-D = Diagonal([0.2^2])
+D = Diagonal([0.8^2]) # NOTE: this is modified from paper
 
 # TVLQR cost
 Q_lqr = [t < T ? Diagonal([10.0;1.0]) : Diagonal([100.0; 100.0]) for t = 1:T]
@@ -45,8 +45,10 @@ prob = init_problem(n,m,T,x1,xT,model,obj,
                     hu=[hu for t=1:T-1],
                     integration=midpoint,
                     goal_constraint=true)
-
 prob_robust = RobustProblem(prob,nw,w0,Q_lqr,R_lqr,Qw,Rw,E1,H1,D,2*(2*m*m*(T-1)))
+
+# MathOptInterface problem
+prob_moi = init_MOI_Problem(prob)
 prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
@@ -56,59 +58,36 @@ tf0 = 2.0
 h0 = tf0/(T-1)
 Z0 = pack(X0,U0,h0,prob)
 
-# MathOptInterface problem
-
-primal_bounds(prob_robust_moi)
-constraint_bounds(prob_robust_moi)
-MOI.eval_objective(prob_robust_moi,Z0)
-MOI.eval_objective_gradient(prob_robust_moi,zeros(prob_robust_moi.n),Z0)
-MOI.eval_constraint(prob_robust_moi,zeros(prob_robust_moi.m),Z0)
-# MOI.eval_constraint_jacobian(prob_robust_moi,zeros(),Z0)
-sparsity_jacobian(prob_robust_moi)
-
 # Solve
-@time Z_sol = solve(prob_robust_moi,Z0)
+@time Z_nominal = solve(prob_moi,Z0)
+@time Z_robust = solve(prob_robust_moi,Z_nominal) # warm start DIRTREL solve
 
 # Unpack solution
-X, U, H = unpack(Z_sol,prob)
+X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
+X_robust, U_robust, H_robust = unpack(Z_sol,prob)
 
-sum(H)
-# Plot trajectories
+display("time (nominal): $(sum(H_nominal))s")
+display("time (robust): $(sum(H_robust))s")
+
+# Plot
 using Plots
-plot(Array(hcat(X...))',width=2.0,xlabel="time step",ylabel="state",label="",title="Pendulum")
-plot(Array(hcat(U...))',width=2.0,xlabel="time step",ylabel="control",label="",title="Pendulum")
-plot(Array(hcat(H...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Pendulum")
 
+# Time
+t_nominal = zeros(T)
+t_robust = zeros(T)
+for t = 2:T
+    t_nominal[t] = t_nominal[t-1] + H_nominal[t-1]
+    t_robust[t] = t_robust[t-1] + H_robust[t-1]
+end
 
-g(x) = [x[1] 0.0 0.0; 0.0 x[2] 0.0; 0.0 0.0 x[3]]
+# Control
+plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,title="Pendulum",xlabel="time (s)",ylabel="control",label="nominal",legend=:topleft)
+plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,width=2.0,label="robust")
+savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 
-sqrt_g(x) = sqrt(g(x))
-chol_g(x) = Array(cholesky(g(x)))
-
-x0 = rand(3)
-sqrt_g(x0)
-chol_g(x0)
-
-e = eigen(g(x0))
-e_sqrt = sqrt.(e.values)
-
-g(x0)
-e.vectors*Diagonal(e.values)*e.vectors'
-S = e.vectors*Diagonal(e_sqrt)*e.vectors
-
-
-
-tmp(x) = matrix_sqrt(g(x))*x
-tmp2(x) = sqrt_g(x)*x
-
-ForwardDiff.jacobian(tmp2,x0)
-matrix_sqrt(g(x0))
-
-norm(vec(matrix_sqrt(g(x0))) - vec(sqrt_g(x0)))
-
-
-A = [33.0 24.0; 48.0 57.0]
-e = eigen(A)
-A_sqrt = e.vectors*Diagonal(sqrt.(e.values))*inv(e.vectors)
-
-A_sqrt*A_sqrt
+# States
+plt = plot(t_nominal,hcat(X_nominal...)[1,:],color=:purple,width=2.0,xlabel="time (s)",ylabel="state",label="θ (nominal)",title="Pendulum",legend=:topleft)
+plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ (nominal)")
+plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,xlabel="time (s)",ylabel="state",label="θ (robust)",title="Pendulum")
+plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")
+savefig(plt,joinpath(pwd(),"examples/results/pendulum_state.png"))

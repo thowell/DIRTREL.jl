@@ -28,7 +28,7 @@ function tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
     P = Q_lqr[T]
     for t = T-1:-1:1
         K[t] = (R_lqr[t] + B[t]'*P*B[t])\(B[t]'*P*A[t])
-        P = Q_lqr[t] + A[t]'*P*A[t] - (A[t]'*P*B[t])*K[t]
+        P = Q_lqr[t] + K[t]'*R_lqr[t]*K[t] + (A[t] - B[t]*K[t])'*P*(A[t] - B[t]*K[t])
     end
 
     return K
@@ -40,12 +40,14 @@ function disturbance_trajectory(Z,A,B,G,K,Qw,Rw,E1,H1,D,n,T)
     H = copy(H1)
 
     for t = 1:T-1
-        tmp = (A[t] - B[t]*K[t])
-        E[t+1] = (tmp*E[t]*tmp'
-            + tmp*H*G[t]'
-            + G[t]*H'*tmp'
-            + G[t]*D*G[t]')
-        H = tmp*H + G[t]*D
+        Acl = A[t] - B[t]*K[t]
+
+        E[t+1] = (Acl*E[t]*Acl'
+                    + Acl*H*G[t]'
+                    + G[t]*H'*Acl'
+                    + G[t]*D*G[t]')
+
+        H = Acl*H + G[t]*D
     end
 
     return E

@@ -6,7 +6,7 @@ function robust_cost(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1
 
     l = 0
     for t = 1:T-1
-        l += tr(Qw[t] + K[t]'*Rw[t]*K[t]*E[t])
+        l += tr((Qw[t] + K[t]'*Rw[t]*K[t])*E[t])
     end
     l += tr(Qw[T]*E[T])
 

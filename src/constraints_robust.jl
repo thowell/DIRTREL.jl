@@ -30,7 +30,7 @@ function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
     for t = 1:T-1
         for j = 1:2*m
             c[(t-1)*(2*m*m) + (j-1)*m .+ (1:m)] = uw[t][j] - uu[t] # upper bounds
-            c[2*m*m*(T-1) + (t-1)*(2*m*m) + (j-1)*m .+ (1:m)] = ul[t] - uw[t][j] # lower bounds
+            c[(2*m*m)*(T-1) + (t-1)*(2*m*m) + (j-1)*m .+ (1:m)] = ul[t] - uw[t][j] # lower bounds
         end
     end
     return nothing
