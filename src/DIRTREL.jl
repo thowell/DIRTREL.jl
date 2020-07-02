@@ -2,6 +2,7 @@ using LinearAlgebra, ForwardDiff, StaticArrays
 using MathOptInterface, Ipopt
 const MOI = MathOptInterface
 
+include("utils.jl")
 include("integration.jl")
 include("indices.jl")
 include("objective.jl")
@@ -12,4 +13,3 @@ include("objective_robust.jl")
 include("constraints_robust.jl")
 include("problem_robust.jl")
 include("moi.jl")
-include("utils.jl")

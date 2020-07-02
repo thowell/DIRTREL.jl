@@ -25,7 +25,7 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Disturbances
 nw = 1
 w0 = zeros(nw)
-E1 = Diagonal(1.0e-8*ones(n))
+E1 = Diagonal(1.0e-6*ones(n))
 H1 = zeros(n,nw)
 D = Diagonal([0.2^2])
 
@@ -63,13 +63,13 @@ h0 = tf0/(T-1)
 Z0 = pack(X0,U0,h0,prob)
 
 # test MOI methods
-#
+
 # primal_bounds(prob_moi)
 # constraint_bounds(prob_moi)
 # MOI.eval_objective(prob_moi,Z0)
 # MOI.eval_objective_gradient(prob_moi,zeros(prob_moi.n),Z0)
 # MOI.eval_constraint(prob_moi,zeros(prob_moi.m),Z0)
-# MOI.eval_constraint_jacobian(prob_moi,zeros(prob_moi.m*prob_moi.n),Z0)
+# # MOI.eval_constraint_jacobian(prob_moi,,Z0)
 # sparsity_jacobian(prob_moi)
 #
 # cw = zeros(prob_robust.M_robust)
@@ -79,20 +79,44 @@ Z0 = pack(X0,U0,h0,prob)
 #             prob_robust.Q_lqr,prob_robust.R_lqr,
 #             prob_robust.Qw,prob_robust.Rw,
 #             prob_robust.E1,prob_robust.H1,prob_robust.D)
-#
+# length(Z0)
 # ∇cw = zeros(prob_robust.M_robust,prob.N)
+# ∇δu = compute_∇δu(Z0,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#
 # ∇uw_bounds!(∇cw,Z0,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
 #             prob_robust.nw,prob_robust.w0,
 #             prob.model,prob.integration,
 #             prob_robust.Q_lqr,prob_robust.R_lqr,
 #             prob_robust.Qw,prob_robust.Rw,
 #             prob_robust.E1,prob_robust.H1,prob_robust.D)
+#
+# tmp!(cw,z) = uw_bounds!(cw,z,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
+#             prob_robust.nw,prob_robust.w0,
+#             prob.model,prob.integration,
+#             prob_robust.Q_lqr,prob_robust.R_lqr,
+#             prob_robust.Qw,prob_robust.Rw,
+#             prob_robust.E1,prob_robust.H1,prob_robust.D)
 # ∇cw
+#
+# cw = zeros(prob_robust.M_robust) #TODO fix
+# ∇cw2 = zeros(prob_robust.M_robust,prob.N)
+# ForwardDiff.jacobian!(∇cw2,tmp!,cw,Z0)
+# ∇cw2
+# norm(vec(∇cw) - vec(∇cw2))
+#
 # sparsity_dynamics = sparsity_jacobian(prob)
 # L = length(sparsity_dynamics)
 #
-# ∇cw = zeros(L + prob_robust.M_robust*prob.N)
-# eval_constraint_jacobian!(∇cw,Z0,prob_robust)
+# _∇cw = zeros(L + prob_robust.M_robust*prob.N)
+# ∇uw_bounds!(reshape(view(_∇cw,L .+ (1:prob_robust.M_robust*prob.N)),prob_robust.M_robust,prob.N),Z0,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
+#             prob_robust.nw,prob_robust.w0,
+#             prob.model,prob.integration,
+#             prob_robust.Q_lqr,prob_robust.R_lqr,
+#             prob_robust.Qw,prob_robust.Rw,
+#             prob_robust.E1,prob_robust.H1,prob_robust.D)
+# eval_constraint_jacobian!(_∇cw,Z0,prob_robust)
+# reshape(_∇cw[L .+ (1:prob_robust.M_robust*prob.N)],prob_robust.M_robust,prob.N)
+# norm(_∇cw[L .+ (1:prob_robust.M_robust*prob.N)] - vec(∇cw))
 
 # Solve
 @time Z_nominal = solve(prob_moi,copy(Z0))
@@ -122,7 +146,7 @@ plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',
     ylabel="control",label="nominal",linelegend=:bottomright,
     linetype=:steppost)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',
-    color=:orange,width=2.0,label="robust")#,linetype=:steppost)
+    color=:orange,width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 U_nominal
 U_robust
@@ -133,14 +157,13 @@ plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ
 plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,label="θ (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_state.png"))
-
-
-e =  compute_E(Z_robust,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-kek = compute_KEK(Z_robust,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-
-plt = plot!(t_robust[1:T-1],sqrt.(vec(vcat(kek...))))
-e_sqrt = matrix_sqrt(e[T-1])
-
+#
+# e =  compute_E(Z_robust,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+# kek = compute_KEK(Z_robust,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#
+# plt = plot!(t_robust[1:T-1],sqrt.(vec(vcat(kek...))))
+# e_sqrt = fastsqrt(e[T-1])
+#
 
 
 
