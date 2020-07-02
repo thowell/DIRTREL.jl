@@ -65,7 +65,7 @@ Z0 = pack(X0,U0,h0,prob)
 
 # Solve
 @time Z_nominal = solve(prob_moi,copy(Z0))
-@time Z_robust = solve(prob_robust_moi,copy(Z0)) # warm start DIRTREL solve
+@time Z_robust = solve(prob_robust_moi,copy(Z0))
 
 # Unpack solution
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)

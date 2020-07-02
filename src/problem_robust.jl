@@ -25,6 +25,12 @@ end
 
 function constraints_robust_jacobian!(∇cw,Z,prob_robust::RobustProblem)
     prob = prob_robust.prob
+    # ∇uw_bounds!(∇cw,Z,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
+    #             prob_robust.nw,prob_robust.w0,
+    #             prob.model,prob.integration,
+    #             prob_robust.Q_lqr,prob_robust.R_lqr,
+    #             prob_robust.Qw,prob_robust.Rw,
+    #             prob_robust.E1,prob_robust.H1,prob_robust.D)
     tmp!(cw,z) = uw_bounds!(cw,z,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
                 prob_robust.nw,prob_robust.w0,
                 prob.model,prob.integration,
@@ -143,15 +149,7 @@ function eval_constraint_jacobian!(∇c,Z,prob_robust::RobustProblem)
     sparse_dynamics_constraints_jacobian!(view(∇c,1:L),Z,
         prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
 
-    tmp!(c,z) = uw_bounds!(c,z,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
-        prob_robust.nw,prob_robust.w0,
-        prob.model,prob.integration,
-        prob_robust.Q_lqr,prob_robust.R_lqr,
-        prob_robust.Qw,prob_robust.Rw,
-        prob_robust.E1,prob_robust.H1,prob_robust.D)
-    c_tmp = zeros(prob_robust.M_robust)
-    ∇c[L .+ (1:prob_robust.M_robust*prob.N)] .= vec(ForwardDiff.jacobian(tmp!,c_tmp,Z))
-
+    constraints_robust_jacobian!(reshape(view(∇c,L .+ (1:prob_robust.M_robust*prob.N)),prob_robust.M_robust,prob.N),Z,prob_robust)
     return nothing
 end
 
