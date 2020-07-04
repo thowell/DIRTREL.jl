@@ -16,24 +16,24 @@ xT = [π; 0.0]
 T = 51
 
 # Objective (minimum time)
-Q = [Diagonal(zeros(n)) for t = 1:T]
-R = [Diagonal(zeros(m)) for t = 1:T-1]
+Q = [Diagonal(zeros(model.nx)) for t = 1:T]
+R = [Diagonal(zeros(model.nu)) for t = 1:T-1]
 c = 1.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [zeros(n) for t=1:T],[zeros(m) for t=1:T])
+    [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Problem
-prob = init_problem(n,m,T,x1,xT,model,obj,
-                    ul=[ul*ones(m) for t=1:T-1],
-                    uu=[uu*ones(m) for t=1:T-1],
+prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
+                    ul=[ul*ones(model.nu) for t=1:T-1],
+                    uu=[uu*ones(model.nu) for t=1:T-1],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
-                    integration=midpoint,
+                    integration=rk3_implicit,
                     goal_constraint=true)
 
 # Initialization
 X0 = linear_interp(x1,xT,T)
-U0 = [0.01*rand(m) for t = 1:T-1]
+U0 = [0.01*randn(model.nu) for t = 1:T-1]
 tf0 = 2.0
 h0 = tf0/(T-1)
 Z0 = pack(X0,U0,h0,prob)
@@ -60,4 +60,4 @@ sum(H)
 using Plots
 plot(Array(hcat(X...))',width=2.0,xlabel="time step",ylabel="state",label="",title="Pendulum")
 plot(Array(hcat(U...))',width=2.0,xlabel="time step",ylabel="control",label="",title="Pendulum")
-plot(Array(hcat(H...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Pendulum")
+# plot(Array(hcat(H...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Pendulum")

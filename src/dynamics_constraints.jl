@@ -11,7 +11,7 @@ function dynamics_constraints!(c,Z,idx,n,m,T,model,integration)
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        c[(t-1)*n .+ (1:n)] = x⁺ - integration(model,x,u,0.0,h)
+        c[(t-1)*n .+ (1:n)] = integration(model,x⁺,x,u,0.0,h)
 
         if t < T-1
             h⁺ = Z[idx.h[t+1]]
@@ -26,6 +26,7 @@ function dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integration)
     # note: x1 and xT constraints are handled as simple bound constraints
     #       e.g., x1 <= x <= x1, xT <= x <= xT
 
+    w = zeros(model.nw)
     p_dyn = n*(T-1) # number of dynamics constraints
     p_h = (T-2)     # number of time-step constraints
 
@@ -37,15 +38,17 @@ function dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integration)
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        dyn_x(z) = x⁺ - integration(model,z,u,0.0,h)
-        dyn_u(z) = x⁺ - integration(model,x,z,0.0,h)
-        dyn_h(z) = x⁺ - integration(model,x,u,0.0,z)
-        # dyn_x⁺(z) = z
+        dyn_x(z) = integration(model,x⁺,z,u,w,h)
+        dyn_u(z) = integration(model,x⁺,x,z,w,h)
+        dyn_h(z) = integration(model,x⁺,x,u,w,z)
+        dyn_x⁺(z) = integration(model,z,x,u,w,h)
+
         r_idx = (t-1)*n .+ (1:n)
+
         ∇c[r_idx,idx.x[t]] = ForwardDiff.jacobian(dyn_x,x)
         ∇c[r_idx,idx.u[t]] = ForwardDiff.jacobian(dyn_u,u)
         ∇c[r_idx,idx.h[t]] = ForwardDiff.jacobian(dyn_h,view(Z,idx.h[t]))
-        ∇c[CartesianIndex.(r_idx,idx.x[t+1])] .= 1.0
+        ∇c[r_idx,idx.x[t+1]] = ForwardDiff.jacobian(dyn_x⁺,x⁺)
 
         if t < T-1
             h⁺ = Z[idx.h[t+1]]
@@ -61,6 +64,7 @@ end
 function sparse_dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integration)
     # note: x1 and xT constraints are handled as simple bound constraints
     #       e.g., x1 <= x <= x1, xT <= x <= xT
+    w = zeros(model.nw)
 
     p_dyn = n*(T-1) # number of dynamics constraints
     p_h = (T-2)     # number of time-step constraints
@@ -73,12 +77,13 @@ function sparse_dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integratio
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        dyn_x(z) = x⁺ - integration(model,z,u,0.0,h)
-        dyn_u(z) = x⁺ - integration(model,x,z,0.0,h)
-        dyn_h(z) = x⁺ - integration(model,x,u,0.0,z)
-        # dyn_x⁺(z) = z
-        # r_idx = (t-1)*n .+ (1:n)
-        # ∇c[r_idx,idx.x[t]] = ForwardDiff.jacobian(dyn_x,x)
+        dyn_x(z) = integration(model,x⁺,z,u,w,h)
+        dyn_u(z) = integration(model,x⁺,x,z,w,h)
+        dyn_h(z) = integration(model,x⁺,x,u,w,z)
+        dyn_x⁺(z) = integration(model,z,x,u,w,h)
+
+        r_idx = (t-1)*n .+ (1:n)
+
         s = n*n
         ∇c[shift .+ (1:s)] = vec(ForwardDiff.jacobian(dyn_x,x))
         shift += s
@@ -93,9 +98,9 @@ function sparse_dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integratio
         ∇c[shift .+ (1:s)] = vec(ForwardDiff.jacobian(dyn_h,view(Z,idx.h[t])))
         shift += s
 
-        # ∇c[CartesianIndex.(r_idx,idx.x[t+1])] .= 1.0
-        s = n
-        ∇c[shift .+ (1:s)] .= 1.0
+        # ∇c[r_idx,idx.x[t+1]] .= ForwardDiff.jacobian(dyn_x,x)
+        s = n*n
+        ∇c[shift .+ (1:s)] = vec(ForwardDiff.jacobian(dyn_x⁺,x⁺))
         shift += s
 
         if t < T-1
@@ -142,9 +147,8 @@ function sparsity_dynamics_jacobian(idx,n,m,T)
         # ∇c[r_idx,idx.h[t]] = ForwardDiff.jacobian(dyn_h,view(Z,idx.h[t]))
         row_col!(row,col,r_idx,idx.h[t])
 
-
-        # ∇c[CartesianIndex.(r_idx,idx.x[t+1])] .= 1.0
-        row_col_cartesian!(row,col,r_idx,idx.x[t+1])
+        # ∇c[CartesianIndex.(r_idx,idx.x[t+1])] = ForwardDiff.jacobian(dyn_x⁺,x⁺)
+        row_col!(row,col,r_idx,idx.x[t+1])
 
         if t < T-1
             r_idx = p_dyn + t

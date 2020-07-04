@@ -32,7 +32,7 @@ function init_problem(n,m,T,x1,xT,model,obj;
         xu=[Inf*ones(n) for t = 1:T],
         hl=[-Inf for t = 1:T-1],
         hu=[Inf for t = 1:T-1],
-        integration=midpoint,
+        integration=rk3_implicit,
         goal_constraint::Bool=true)
 
     idx = init_indices(n,m,T)
@@ -124,11 +124,11 @@ function constraint_bounds(prob::TrajectoryOptimizationProblem)
 end
 
 function eval_objective(prob::TrajectoryOptimizationProblem,Z)
-    objective(Z,prob.obj,prob.idx,prob.T)
+    objective(Z,prob.obj,prob.model,prob.idx,prob.T)
 end
 
 function eval_objective_gradient!(∇l,Z,prob::TrajectoryOptimizationProblem)
-    objective_gradient!(∇l,Z,prob.obj,prob.idx,prob.T)
+    objective_gradient!(∇l,Z,prob.obj,prob.model,prob.idx,prob.T)
     return nothing
 end
 
