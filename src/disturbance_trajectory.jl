@@ -1,4 +1,4 @@
-function linearize_trajectories(Z,n,m,T,idx,nw,w0,model,integration)
+function linearize_trajectories(Z,n,m,T,idx,nw,w,model,integration)
     # linearize about nominal trajectories
     A = [zeros(eltype(Z),n,n) for t = 1:T-1]
     B = [zeros(eltype(Z),n,m) for t = 1:T-1]
@@ -10,13 +10,16 @@ function linearize_trajectories(Z,n,m,T,idx,nw,w0,model,integration)
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
 
-        dyn_x(z) = x⁺ - integration(model,z,u,w0,h)
-        dyn_u(z) = x⁺ - integration(model,x,z,w0,h)
-        dyn_w(z) = x⁺ - integration(model,x,u,z,h)
+        dyn_x(z) = integration(model,x⁺,z,u,w,h)
+        dyn_u(z) = integration(model,x⁺,x,z,w,h)
+        dyn_w(z) = integration(model,x⁺,x,u,z,h)
+        dyn_x⁺(z) = integration(model,z,x,u,w,h)
 
-        A[t] = ForwardDiff.jacobian(dyn_x,x)
-        B[t] = ForwardDiff.jacobian(dyn_u,u)
-        G[t] = ForwardDiff.jacobian(dyn_w,w0)
+        # (see implicit function theorem)
+        A⁺ = ForwardDiff.jacobian(dyn_x⁺,x⁺)
+        A[t] = -A⁺\ForwardDiff.jacobian(dyn_x,x)
+        B[t] = -A⁺\ForwardDiff.jacobian(dyn_u,u)
+        G[t] = -A⁺\ForwardDiff.jacobian(dyn_w,w)
     end
 
     return A, B, G

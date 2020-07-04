@@ -18,24 +18,24 @@ x1 = [0.0; 0.0; 0.0; 0.0]
 xT = [0.0; π; 0.0; 0.0]
 
 # Objective (minimum time)
-Q = [Diagonal(ones(n)) for t = 1:T]
-R = [Diagonal(0.1*ones(m)) for t = 1:T-1]
+Q = [Diagonal(ones(model.nx)) for t = 1:T]
+R = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
 c = 0.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [xT for t=1:T],[zeros(m) for t=1:T])
+    [xT for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Problem
-prob = init_problem(n,m,T,x1,xT,model,obj,
-                    ul=[ul*ones(m) for t=1:T-1],
-                    uu=[uu*ones(m) for t=1:T-1],
+prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
+                    ul=[ul*ones(model.nu) for t=1:T-1],
+                    uu=[uu*ones(model.nu) for t=1:T-1],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
-                    integration=midpoint,
+                    integration=rk3_implicit,
                     goal_constraint=true)
 
 # Initialization
 X0 = linear_interp(x1,xT,T)
-U0 = [0.01*rand(m) for t = 1:T-1]
+U0 = [0.01*rand(model.nu) for t = 1:T-1]
 Z0 = pack(X0,U0,h0,prob)
 
 # MathOptInterface problem
@@ -59,4 +59,4 @@ X_sol, U_sol, H_sol = unpack(Z_sol,prob)
 using Plots
 plot(Array(hcat(X_sol...))',width=2.0,xlabel="time step",ylabel="state",label="",title="Cartpole")
 plot(Array(hcat(U_sol...))',width=2.0,xlabel="time step",ylabel="control",label="",title="Cartpole")
-plot(Array(hcat(H_sol...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Cartpole")
+# plot(Array(hcat(H_sol...))',width=2.0,xlabel="time step",ylabel="h",label="",title="Cartpole")

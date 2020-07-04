@@ -91,26 +91,27 @@ end
 
 function eval_objective(prob_robust::RobustProblem,Z)
     prob = prob_robust.prob
-    return objective(Z,prob.obj,prob.idx,prob.T) + robust_cost(Z,
-                                                    prob.n,prob.m,prob.T,
-                                                    prob.idx,
-                                                    prob_robust.nw,
-                                                    prob_robust.w0,
-                                                    prob.model,
-                                                    prob.integration,
-                                                    prob_robust.Q_lqr,
-                                                    prob_robust.R_lqr,
-                                                    prob_robust.Qw,
-                                                    prob_robust.Rw,
-                                                    prob_robust.E1,
-                                                    prob_robust.H1,
-                                                    prob_robust.D)
+    return (objective(Z,prob.obj,prob.model,prob.idx,prob.T)
+            + robust_cost(Z,
+                prob.n,prob.m,prob.T,
+                prob.idx,
+                prob_robust.nw,
+                prob_robust.w0,
+                prob.model,
+                prob.integration,
+                prob_robust.Q_lqr,
+                prob_robust.R_lqr,
+                prob_robust.Qw,
+                prob_robust.Rw,
+                prob_robust.E1,
+                prob_robust.H1,
+                prob_robust.D))
 end
 
 function eval_objective_gradient!(∇l,Z,prob_robust::RobustProblem)
     prob = prob_robust.prob
 
-    objective_gradient!(∇l,Z,prob.obj,prob.idx,prob.T)
+    objective_gradient!(∇l,Z,prob.obj,prob.model,prob.idx,prob.T)
 
     tmp(z) = robust_cost(z,
                         prob.n,prob.m,prob.T,prob.idx,
