@@ -1,12 +1,12 @@
 ## DIRTREL.jl
 
-This repository provides a basic implementation of [DIRTREL: Robust Trajectory Optimization with Ellipsoidal Disturbances and LQR Feedback](https://agile.seas.harvard.edu/files/agile/files/dirtrel.pdf) written in Julia.
+This repository provides a basic implementation of [DIRTREL: Robust Trajectory Optimization with Ellipsoidal Disturbances and LQR Feedback](https://rexlab.stanford.edu/papers/dirtrel-auro.pdf) written in Julia.
 
-The following robust trajectory optimization problem is solved,
+DIRTREL finds locally optimal solutions to the robust trajectory optimization problem:
 ```
 minimize        l(X,U) + lw(X,U)
   X,U,H
-subject to      x+ = f(x,u,h)
+subject to      f(x+,x,u,h) = 0
                 h+ = h
                 x1 = x(0)
                 xT = x(tf)
@@ -14,14 +14,27 @@ subject to      x+ = f(x,u,h)
                 xl <= x <= xu
                 ul <= uw <= uu
                 xl <= xw <= xu
-                hl <= h <= hu,             
+                hl <= h <= hu.            
 ```
-where for simplicity, all constraints (apart from dynamics) are linear bounds
-and the object is,
+The state,
+```
+X = [x1,...,xT],
+```
+control,
+```
+U = [u1,...,uT-1],
+```
+and timestep,
+```
+H = [h1,...,hT-1],
+```
+trajectories are optimized by minimizing a quadratic tracking cost function,
 ```
 l(X,U) = (x-xT)'QT(x-xT) + h Σ {(x-xt)'Qt(x-xt) + (u-ut)'Rt(u-ut) + c},
 ```
-a quadratic tracking cost function.
+and the robust cost function (Eq. 29). For simplicity of the implementation,
+robust constraints are only implemented for state and control bounds (not general
+constraints).
 
 ## Installation
 ```code
@@ -39,10 +52,12 @@ The [pendulum](https://github.com/thowell/DIRTREL.jl/blob/master/examples/pendul
 ![](examples/results/cartpole_state.png)
 ![](examples/results/cartpole_control.png)
 
-*Note: Because the open-source non-convex solver [Ipopt](https://github.com/coin-or/Ipopt) is used in place of [SNOPT](https://web.stanford.edu/group/SOL/snopt.htm), the optimized trajectories differ slightly, but the qualitative behavior is similar.
+*Note: Because the open-source non-convex solver [Ipopt](https://github.com/coin-or/Ipopt)
+is used in place of [SNOPT](https://web.stanford.edu/group/SOL/snopt.htm),
+the optimized trajectories differ slightly, but the qualitative behavior is similar.
 
 ## TODO
-- [ ] add linear robust state bounds
+- [X] add linear robust state bounds
 - [ ] add general robust constraints
 - [ ] replace ForwardDiff with analytical derivatives
 - [ ] compare results with SNOPT
