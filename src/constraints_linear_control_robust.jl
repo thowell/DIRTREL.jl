@@ -1,11 +1,4 @@
-function compute_E(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    A, B, G = linearize_trajectories(Z,n,m,T,idx,nw,w0,model,integration)
-    K = tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
-    E = disturbance_trajectory(Z,A,B,G,K,Qw,Rw,E1,H1,D,n,T)
-
-    return E
-end
-
+# robust linear control bounds
 function compute_KEK(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     A, B, G = linearize_trajectories(Z,n,m,T,idx,nw,w0,model,integration)
     K = tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
@@ -57,8 +50,6 @@ function compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1
     return ∇δu
 end
 
-
-# Robust linear control bounds
 function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
 
@@ -113,42 +104,3 @@ end
 function num_robust_control_bounds(m,T)
     return 2*(2*m*m*(T-1))
 end
-#
-# A = rand(3,3)
-# B = A'*A
-# B = Diagonal([0.0;2.0;2.0])
-# B_sqrt = fastsqrt(B)
-# B_sqrt*B_sqrt
-# Matrix(I,size(A))
-#
-#
-#
-#
-# get_mat(x) = [x[1] 0.0 0.0; 0.0 x[2] 0.0; 0.0 0.0 x[3]]
-# get_mat_sqrt(x) = fastsqrt(get_mat(x))
-#
-# ForwardDiff.jacobian(get_mat_sqrt,rand(3))
-# function fastsqrt(A)
-#     #FASTSQRT computes the square root of a matrix A with Denman-Beavers iteration
-#
-#     #S = sqrtm(A);
-#     Ep = 1e-8*Matrix(I,size(A))
-#
-#     if count(diag(A) .> 0.0) != size(A,1)
-#         S = diagm(sqrt.(diag(A)));
-#         return S
-#     end
-#
-#     In = Matrix(1.0*I,size(A));
-#     S = A;
-#     T = Matrix(1.0*I,size(A));
-#
-#     T = .5*(T + inv(S+Ep));
-#     S = .5*(S+In);
-#     for k = 1:4
-#         Snew = .5*(S + inv(T+Ep));
-#         T = .5*(T + inv(S+Ep));
-#         S = Snew;
-#     end
-#     return S
-# end

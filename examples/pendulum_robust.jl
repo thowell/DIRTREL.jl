@@ -23,7 +23,6 @@ obj = QuadraticTrackingObjective(Q,R,c,
     [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Disturbances
-w0 = zeros(model.nw)
 E1 = Diagonal(1.0e-6*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
 D = Diagonal([0.2^2])
@@ -40,15 +39,19 @@ Rw = deepcopy(R_lqr)
 prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
                     ul=[ul*ones(model.nu) for t=1:T-1],
                     uu=[uu*ones(model.nu) for t=1:T-1],
+                    xl=[-25*ones(model.nx) for t=1:T],
+                    xu=[25*ones(model.nx)  for t=1:T],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
                     integration=rk3_implicit,
                     goal_constraint=true)
-prob_robust = RobustProblem(prob,model.nw,w0,
+
+prob_robust = robust_problem(prob,model.nw,
     Q_lqr,R_lqr,
     Qw,Rw,
     E1,H1,D,
-    num_robust_control_bounds(model.nu,T))
+    robust_control_bnds=true,
+    robust_state_bnds=true)
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
