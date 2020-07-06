@@ -1,10 +1,14 @@
 include("../src/DIRTREL.jl")
 include("../dynamics/pendulum.jl")
+using Plots
 
 # Bounds
+
+# ul <= u <= uu
 uu = 3.0
 ul = -3.0
 
+# hl <= h <= hu
 hu = Inf
 hl = 0.0
 
@@ -22,7 +26,7 @@ c = 1.0
 obj = QuadraticTrackingObjective(Q,R,c,
     [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T])
 
-# Disturbances
+# Initial disturbances
 E1 = Diagonal(1.0e-6*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
 D = Diagonal([0.2^2])
@@ -39,100 +43,45 @@ Rw = deepcopy(R_lqr)
 prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
                     ul=[ul*ones(model.nu) for t=1:T-1],
                     uu=[uu*ones(model.nu) for t=1:T-1],
-                    xl=[-25*ones(model.nx) for t=1:T],
-                    xu=[25*ones(model.nx)  for t=1:T],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
                     integration=rk3_implicit,
                     goal_constraint=true)
 
+# Robust problem
 prob_robust = robust_problem(prob,model.nw,
     Q_lqr,R_lqr,
     Qw,Rw,
     E1,H1,D,
-    robust_control_bnds=true,
-    robust_state_bnds=true)
+    robust_control_bnds=true)
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
 prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
-X0 = linear_interp(x1,xT,T)
-U0 = [0.01*randn(model.nu) for t = 1:T-1]
+X0 = linear_interp(x1,xT,T) # linear interpolation for states
+U0 = [0.01*randn(model.nu) for t = 1:T-1] # random controls
 tf0 = 2.0
-h0 = tf0/(T-1)
+h0 = tf0/(T-1) # timestep
+
+# Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
 
-# test MOI methods
-
-# primal_bounds(prob_moi)
-# constraint_bounds(prob_moi)
-# MOI.eval_objective(prob_moi,Z0)
-# MOI.eval_objective_gradient(prob_moi,zeros(prob_moi.n),Z0)
-# MOI.eval_constraint(prob_moi,zeros(prob_moi.m),Z0)
-# # MOI.eval_constraint_jacobian(prob_moi,,Z0)
-# sparsity_jacobian(prob_moi)
-#
-# cw = zeros(prob_robust.M_robust)
-# uw_bounds!(cw,Z0,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
-#             prob_robust.nw,prob_robust.w0,
-#             prob.model,prob.integration,
-#             prob_robust.Q_lqr,prob_robust.R_lqr,
-#             prob_robust.Qw,prob_robust.Rw,
-#             prob_robust.E1,prob_robust.H1,prob_robust.D)
-# length(Z0)
-# ∇cw = zeros(prob_robust.M_robust,prob.N)
-# ∇δu = compute_∇δu(Z0,n,m,T,prob.idx,nw,w0,model,midpoint,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-#
-# ∇uw_bounds!(∇cw,Z0,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
-#             prob_robust.nw,prob_robust.w0,
-#             prob.model,prob.integration,
-#             prob_robust.Q_lqr,prob_robust.R_lqr,
-#             prob_robust.Qw,prob_robust.Rw,
-#             prob_robust.E1,prob_robust.H1,prob_robust.D)
-#
-# tmp!(cw,z) = uw_bounds!(cw,z,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
-#             prob_robust.nw,prob_robust.w0,
-#             prob.model,prob.integration,
-#             prob_robust.Q_lqr,prob_robust.R_lqr,
-#             prob_robust.Qw,prob_robust.Rw,
-#             prob_robust.E1,prob_robust.H1,prob_robust.D)
-# ∇cw
-#
-# cw = zeros(prob_robust.M_robust) #TODO fix
-# ∇cw2 = zeros(prob_robust.M_robust,prob.N)
-# ForwardDiff.jacobian!(∇cw2,tmp!,cw,Z0)
-# ∇cw2
-# norm(vec(∇cw) - vec(∇cw2))
-#
-# sparsity_dynamics = sparsity_jacobian(prob)
-# L = length(sparsity_dynamics)
-#
-# _∇cw = zeros(L + prob_robust.M_robust*prob.N)
-# ∇uw_bounds!(reshape(view(_∇cw,L .+ (1:prob_robust.M_robust*prob.N)),prob_robust.M_robust,prob.N),Z0,prob.ul,prob.uu,prob.n,prob.m,prob.T,prob.idx,
-#             prob_robust.nw,prob_robust.w0,
-#             prob.model,prob.integration,
-#             prob_robust.Q_lqr,prob_robust.R_lqr,
-#             prob_robust.Qw,prob_robust.Rw,
-#             prob_robust.E1,prob_robust.H1,prob_robust.D)
-# eval_constraint_jacobian!(_∇cw,Z0,prob_robust)
-# reshape(_∇cw[L .+ (1:prob_robust.M_robust*prob.N)],prob_robust.M_robust,prob.N)
-# norm(_∇cw[L .+ (1:prob_robust.M_robust*prob.N)] - vec(∇cw))
-
-# Solve
+# Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
+
+# Solve robust problem
 @time Z_robust = solve(prob_robust_moi,copy(Z0))
 
-# Unpack solution
+# Unpack solutions
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
 X_robust, U_robust, H_robust = unpack(Z_robust,prob)
 
 display("time (nominal): $(sum(H_nominal))s")
 display("time (robust): $(sum(H_robust))s")
 
-# Plot
-using Plots
+# Plot results
 
 # Time
 t_nominal = zeros(T)

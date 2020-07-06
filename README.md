@@ -16,25 +16,8 @@ subject to      f(x+,x,u,h) = 0
                 xl <= xw <= xu
                 hl <= h <= hu.            
 ```
-The state,
-```
-X = [x1,...,xT],
-```
-control,
-```
-U = [u1,...,uT-1],
-```
-and timestep,
-```
-H = [h1,...,hT-1],
-```
-trajectories are optimized by minimizing a quadratic tracking cost function,
-```
-l(X,U) = (x-xT)'QT(x-xT) + h Σ {(x-xt)'Qt(x-xt) + (u-ut)'Rt(u-ut) + c},
-```
-and the robust cost function (Eq. 29). For simplicity of the implementation,
-robust constraints are only implemented for state and control bounds (not general
-constraints).
+For simplicity of the implementation,
+robust constraints are only implemented for state and control bounds. 
 
 ## Installation
 ```code

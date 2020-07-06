@@ -1,13 +1,17 @@
 include("../src/DIRTREL.jl")
 include("../dynamics/cartpole.jl")
+using Plots
 
 # Horizon
 T = 101
 
 # Bounds
+
+# ul <= u <= uu
 uu = 10.0
 ul = -10.0
 
+# h = h0 (fixed timestep)
 tf0 = 5.0
 h0 = tf0/(T-1)
 hu = h0
@@ -22,11 +26,10 @@ Q = [t < T ? Diagonal(ones(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
 R = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
 c = 0.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [x1 for t=1:T],[zeros(model.nu) for t=1:T])
+    [x1 for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
 
-# Disturbances
-w0 = zeros(model.nw)
-E1 = Diagonal(1.0e-6*ones(model.nx))
+# Initial disturbances
+E1 = Diagonal(1.0e-8*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
 D = Diagonal([4.0])
 
@@ -47,33 +50,35 @@ prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
                     integration=rk3_implicit,
                     goal_constraint=true)
 
-prob_robust = RobustProblem(prob,model.nw,w0,
+# Robust problem
+prob_robust = robust_problem(prob,model.nw,
     Q_lqr,R_lqr,
     Qw,Rw,
     E1,H1,D,
-    num_robust_control_bounds(model.nu,T))
+    robust_control_bnds=true)
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
 prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
-# Initialization
-X0 = linear_interp(x1,xT,T)
-U0 = [0.01*rand(model.nu) for t = 1:T-1]
+# Trajectory initialization
+X0 = linear_interp(x1,xT,T) # linear interpolation on state
+U0 = [0.001*rand(model.nu) for t = 1:T-1] # random controls
+
+# Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
 
-# Solve
+# Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
+
+# Solve robust problem
 @time Z_robust = solve(prob_robust_moi,copy(Z0))
 
-# Unpack solution
+# Unpack solutions
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
 X_robust, U_robust, H_robust = unpack(Z_robust,prob)
 
-display("time (nominal): $(sum(H_nominal))s")
-display("time (robust): $(sum(H_robust))s")
-
-# Time
+# Time trajectories
 t_nominal = zeros(T)
 t_robust = zeros(T)
 for t = 2:T
@@ -81,7 +86,7 @@ for t = 2:T
     t_robust[t] = t_robust[t-1] + H_robust[t-1]
 end
 
-using Plots
+# Plots results
 
 # Control
 plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,
@@ -94,7 +99,7 @@ savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
     color=:purple,width=2.0,xlabel="time (s)",
-    ylabel="state",label="x (nominal)",title="Cartpole",legend=:topleft)
+    ylabel="state",label="x (nominal)",title="Cartpole",legend=:top)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],
     color=:purple,width=2.0,label="θ (nominal)")
 plt = plot!(t_nominal,hcat(X_nominal...)[3,:],
