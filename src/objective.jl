@@ -16,6 +16,7 @@ end
 
 function stage_cost(model,x⁺,x,u,Q,R,x_ref,u_ref,h,c,w)
     xm = xm_rk3_implicit(model,x⁺,x,u,w,h)
+
     ℓ1 = quadratic_cost(x,u,Q,R,x_ref,u_ref)
     ℓ2 = quadratic_cost(xm,u,Q,R,x_ref,u_ref)
     ℓ3 = quadratic_cost(x⁺,u,Q,R,x_ref,u_ref)
@@ -37,10 +38,10 @@ function objective(Z,l::QuadraticTrackingObjective,model,idx,T)
 
     s = 0
     for t = 1:T-1
-        x = view(Z,idx.x[t])
-        u = view(Z,idx.u[t])
+        x = Z[idx.x[t]]
+        u = Z[idx.u[t]]
         h = Z[idx.h[t]]
-        x⁺ = view(Z,idx.x[t+1])
+        x⁺ = Z[idx.x[t+1]]
 
         s += stage_cost(model,x⁺,x,u,Q[t],R[t],x_ref[t],u_ref[t],h,c,w)
     end
@@ -60,10 +61,10 @@ function objective_gradient!(∇l,Z,l::QuadraticTrackingObjective,model,idx,T)
 
     ∇l .= 0.0
     for t = 1:T-1
-        x = view(Z,idx.x[t])
-        u = view(Z,idx.u[t])
+        x = Z[idx.x[t]]
+        u = Z[idx.u[t]]
         h = Z[idx.h[t]]
-        x⁺ = view(Z,idx.x[t+1])
+        x⁺ = Z[idx.x[t+1]]
 
         stage_cost_x(z) = stage_cost(model,x⁺,z,u,Q[t],R[t],x_ref[t],u_ref[t],h,c,w)
         stage_cost_u(z) = stage_cost(model,x⁺,x,z,Q[t],R[t],x_ref[t],u_ref[t],h,c,w)

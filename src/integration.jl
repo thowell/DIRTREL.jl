@@ -1,5 +1,5 @@
 function xm_rk3_implicit(model,x⁺,x,u,w,h)
-    0.5*(x⁺ + x) + h[1]/8*(model.f(model,x,u,w) - model.f(model,x⁺,u,w))
+    0.5*(x⁺ + x) + h[1]/8.0*(model.f(model,x,u,w) - model.f(model,x⁺,u,w))
 end
 
 function rk3_implicit(model,x⁺,x,u,w,h)

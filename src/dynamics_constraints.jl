@@ -6,10 +6,10 @@ function dynamics_constraints!(c,Z,idx,n,m,T,model,integration)
     p_h = (T-2)     # number of time-step constraints
 
     for t = 1:T-1
-        x = view(Z,idx.x[t])
-        u = view(Z,idx.u[t])
+        x = Z[idx.x[t]]
+        u = Z[idx.u[t]]
         h = Z[idx.h[t]]
-        x⁺ = view(Z,idx.x[t+1])
+        x⁺ = Z[idx.x[t+1]]
 
         c[(t-1)*n .+ (1:n)] = integration(model,x⁺,x,u,0.0,h)
 
@@ -33,10 +33,10 @@ function dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integration)
     shift = 0
 
     for t = 1:T-1
-        x = view(Z,idx.x[t])
-        u = view(Z,idx.u[t])
+        x = Z[idx.x[t]]
+        u = Z[idx.u[t]]
         h = Z[idx.h[t]]
-        x⁺ = view(Z,idx.x[t+1])
+        x⁺ = Z[idx.x[t+1]]
 
         dyn_x(z) = integration(model,x⁺,z,u,w,h)
         dyn_u(z) = integration(model,x⁺,x,z,w,h)
@@ -72,10 +72,10 @@ function sparse_dynamics_constraints_jacobian!(∇c,Z,idx,n,m,T,model,integratio
     shift = 0
 
     for t = 1:T-1
-        x = view(Z,idx.x[t])
-        u = view(Z,idx.u[t])
+        x = Z[idx.x[t]]
+        u = Z[idx.u[t]]
         h = Z[idx.h[t]]
-        x⁺ = view(Z,idx.x[t+1])
+        x⁺ = Z[idx.x[t+1]]
 
         dyn_x(z) = integration(model,x⁺,z,u,w,h)
         dyn_u(z) = integration(model,x⁺,x,z,w,h)
