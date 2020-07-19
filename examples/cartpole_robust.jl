@@ -26,7 +26,7 @@ Q = [t < T ? Diagonal(ones(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
 R = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
 c = 0.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [x1 for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
+    [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
 
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))

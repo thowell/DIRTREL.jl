@@ -12,7 +12,7 @@ end
 
 function cartpole_dynamics(model::Cartpole, x, u, w)
     H = @SMatrix [model.mc+model.mp model.mp*model.l*cos(x[2]); model.mp*model.l*cos(x[2]) model.mp*model.l^2]
-    C = @SMatrix [0.0 -model.mp*x[2]*model.l*sin(x[2]); 0.0 0.0]
+    C = @SMatrix [0.0 -model.mp*x[4]*model.l*sin(x[2]); 0.0 0.0]
     G = @SVector [0.0, model.mp*model.g*model.l*sin(x[2])]
     B = @SVector [1.0, 0.0]
     qdd = SVector{2}(-H\(C*view(x,1:2) + G - B*u[1] - B*w[1]))
