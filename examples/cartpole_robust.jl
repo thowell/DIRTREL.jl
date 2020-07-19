@@ -3,7 +3,7 @@ include("../dynamics/cartpole.jl")
 using Plots
 
 # Horizon
-T = 101
+T = 51
 
 # Bounds
 
@@ -26,7 +26,7 @@ Q = [t < T ? Diagonal(ones(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
 R = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
 c = 0.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
+    [xT for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
 
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))
@@ -91,7 +91,7 @@ end
 # Control
 plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,
     title="Cartpole",xlabel="time (s)",ylabel="control",label="nominal",
-    legend=:topleft,linetype=:steppost)
+    legend=:topright,linetype=:steppost)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
     width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
@@ -99,7 +99,7 @@ savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
     color=:purple,width=2.0,xlabel="time (s)",
-    ylabel="state",label="x (nominal)",title="Cartpole",legend=:top)
+    ylabel="state",label="x (nominal)",title="Cartpole",legend=:topright)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],
     color=:purple,width=2.0,label="θ (nominal)")
 plt = plot!(t_nominal,hcat(X_nominal...)[3,:],
