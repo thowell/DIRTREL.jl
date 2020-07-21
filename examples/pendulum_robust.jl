@@ -27,7 +27,7 @@ obj = QuadraticTrackingObjective(Q,R,c,
     [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Initial disturbances
-E1 = Diagonal(1.0e-6*ones(model.nx))
+E1 = Diagonal(1.0e-8*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
 D = Diagonal([0.2^2])
 
@@ -53,7 +53,7 @@ prob_robust = robust_problem(prob,model.nw,
     Q_lqr,R_lqr,
     Qw,Rw,
     E1,H1,D,
-    robust_control_bnds=false)
+    robust_control_bnds=true)
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
@@ -61,7 +61,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation for states
-U0 = [0.001*randn(model.nu) for t = 1:T] # random controls
+U0 = [0.01*rand(model.nu) for t = 1:T] # random controls
 tf0 = 2.0
 h0 = tf0/(T-1) # timestep
 
@@ -102,7 +102,7 @@ savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
     color=:purple,width=2.0,xlabel="time (s)",ylabel="state",
-    label="θ (nominal)",title="Pendulum",legend=:topleft)
+    label="θ (nominal)",title="Pendulum",legend=:topright)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ (nominal)")
 plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,label="θ (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")

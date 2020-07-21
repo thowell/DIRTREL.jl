@@ -4,17 +4,23 @@ function compute_KEK(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1
     K = tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
     E = disturbance_trajectory(Z,A,B,G,K,Qw,Rw,E1,H1,D,n,T)
 
-    KEK = [K[t]*E[t]*K[t]' for t = 1:T-1]
+    KEK = [view(K[1],1:m,:)*E[1]*view(K[1],1:m,:)',[view(K[t],m .+ (1:m),:)*E[t-1]*view(K[t],m .+ (1:m),:)' + view(K[t],1:m,:)*E[t]*view(K[t],1:m,:)' for t = 2:T-1]..., view(K[T-1],m .+ (1:m),:)*E[T-1]*view(K[T-1],m .+ (1:m),:)']
 end
 
 function compute_KEK_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    KEK_vec = zeros(eltype(Z),m*m*(T-1))
+    KEK_vec = zeros(eltype(Z),m*m*T)
     A, B, G = linearize_trajectories(Z,n,m,T,idx,nw,w0,model,integration)
     K = tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
     E = disturbance_trajectory(Z,A,B,G,K,Qw,Rw,E1,H1,D,n,T)
 
-    for t = 1:T-1
-        KEK_vec[(t-1)*(m*m) .+ (1:m*m)] = vec(K[t]*E[t]*K[t]')
+    for t = 1:T
+        if t == 1
+            KEK_vec[(t-1)*(m*m) .+ (1:m*m)] = view(K[1],1:m,:)*E[1]*view(K[1],1:m,:)'
+        elseif t == T
+            KEK_vec[(t-1)*(m*m) .+ (1:m*m)] = view(K[T-1],m .+ (1:m),:)*E[T-1]*view(K[T-1],m .+ (1:m),:)'
+        else
+            KEK_vec[(t-1)*(m*m) .+ (1:m*m)] = view(K[t],m .+ (1:m),:)*E[t-1]*view(K[t],m .+ (1:m),:)' + view(K[t],1:m,:)*E[t]*view(K[t],1:m,:)'
+        end
     end
 
     return KEK_vec
@@ -23,7 +29,7 @@ end
 function compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     KEK = compute_KEK_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δu = zeros(eltype(Z),length(KEK))
-    for t = 1:T-1
+    for t = 1:T
         kek = reshape(KEK[(t-1)*m*m .+ (1:m*m)],m,m)
         cols = fastsqrt(kek)
         for j = 1:m
@@ -39,9 +45,9 @@ function compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1
     ∇KEK = ForwardDiff.jacobian(gen_KEK,Z)
 
     N = length(Z)
-    ∇δu = zeros(eltype(Z),m*m*(T-1),N)
+    ∇δu = zeros(eltype(Z),m*m*T,N)
     Im = Diagonal(ones(m))
-    for t = 1:T-1
+    for t = 1:T
        r_idx = (t-1)*m*m .+ (1:m*m)
        kek_sqrt = fastsqrt(reshape(KEK[r_idx],m,m))
        ∇δu[r_idx,1:N] = inv(kron(Im,kek_sqrt) + kron(kek_sqrt,Im))*∇KEK[r_idx,1:N]
@@ -54,7 +60,7 @@ function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
     δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
 
     shift = 0
-    for t = 1:T-1
+    for t = 1:T
         for j = 1:m
             _δu = δu[(t-1)*m*m + (j-1)*m .+ (1:m)]
             uw⁺ = Z[idx.u[t]] + _δu
@@ -76,7 +82,7 @@ function ∇uw_bounds!(∇c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lq
     ∇δu = compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     N = length(Z)
     shift = 0
-    for t = 1:T-1
+    for t = 1:T
         for j = 1:m
             # _δu = δu[(t-1)*m*m + (j-1)*m .+ (1:m)]
             # uw⁺ = Z[idx.u[t]] + _δu
@@ -102,5 +108,5 @@ function ∇uw_bounds!(∇c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lq
 end
 
 function num_robust_control_bounds(m,T)
-    return 2*(2*m*m*(T-1))
+    return 2*(2*m*m*T)
 end

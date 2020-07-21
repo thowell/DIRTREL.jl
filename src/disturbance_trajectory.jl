@@ -28,7 +28,7 @@ function linearize_trajectories(Z,n,m,T,idx,nw,w,model,integration)
 end
 
 function tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
-    K = [zeros(eltype(Z),m,n) for t = 1:T-1]
+    K = [zeros(eltype(Z),2*m,n) for t = 1:T-1]
 
     P = Q_lqr[T]
     for t = T-1:-1:1

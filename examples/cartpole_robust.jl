@@ -35,7 +35,7 @@ D = Diagonal([4.0])
 
 # TVLQR cost
 Q_lqr = [t < T ? Diagonal([10.0;10.0;1.0;1.0]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
-R_lqr = [Diagonal(1.0*ones(model.nu)) for t = 1:T-1]
+R_lqr = [0.5*Diagonal(1.0*ones(model.nu)) for t = 1:T]
 
 # Robust cost
 Qw = deepcopy(Q_lqr)
@@ -92,14 +92,14 @@ end
 plt = plot(t_nominal,Array(hcat(U_nominal...))',color=:purple,width=2.0,
     title="Cartpole",xlabel="time (s)",ylabel="control",label="nominal",
     legend=:topright)
-plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
-    width=2.0,label="robust",linetype=:steppost)
+plt = plot!(t_robust,Array(hcat(U_robust...))',color=:orange,
+    width=2.0,label="robust")
 savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
 
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
     color=:purple,width=2.0,xlabel="time (s)",
-    ylabel="state",label="x (nominal)",title="Cartpole",legend=:topright)
+    ylabel="state",label="x (nominal)",title="Cartpole",legend=:topleft)
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],
     color=:purple,width=2.0,label="θ (nominal)")
 plt = plot!(t_nominal,hcat(X_nominal...)[3,:],
