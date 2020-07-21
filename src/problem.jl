@@ -26,8 +26,8 @@ mutable struct TrajectoryOptimizationProblem <: Problem
 end
 
 function init_problem(n,m,T,x1,xT,model,obj;
-        ul=[-Inf*ones(m) for t = 1:T-1],
-        uu=[Inf*ones(m) for t = 1:T-1],
+        ul=[-Inf*ones(m) for t = 1:T],
+        uu=[Inf*ones(m) for t = 1:T],
         xl=[-Inf*ones(n) for t = 1:T],
         xu=[Inf*ones(n) for t = 1:T],
         hl=[-Inf for t = 1:T-1],
@@ -36,7 +36,7 @@ function init_problem(n,m,T,x1,xT,model,obj;
         goal_constraint::Bool=true)
 
     idx = init_indices(n,m,T)
-    N = n*T + m*(T-1) + (T-1)
+    N = n*T + m*T + (T-1)
     M = n*(T-1) + (T-2)
 
     return TrajectoryOptimizationProblem(n,m,T,N,M,
@@ -56,12 +56,13 @@ function pack(X0,U0,h0,prob::TrajectoryOptimizationProblem)
     T = prob.T
 
     Z0 = zeros(prob.N)
-    for t = 1:T-1
+    for t = 1:T
         Z0[(t-1)*(n+m+1) .+ (1:n)] = X0[t]
         Z0[(t-1)*(n+m+1)+n .+ (1:m)] = U0[t]
+
+        t==T && continue
         Z0[(t-1)*(n+m+1)+n+m + 1] = h0
     end
-    Z0[(T-1)*(n+m+1) .+ (1:n)] = X0[T]
 
     return Z0
 end
@@ -72,7 +73,7 @@ function unpack(Z0,prob::TrajectoryOptimizationProblem)
     T = prob.T
 
     X = [Z0[(t-1)*(n+m+1) .+ (1:n)] for t = 1:T]
-    U = [Z0[(t-1)*(n+m+1)+n .+ (1:m)] for t = 1:T-1]
+    U = [Z0[(t-1)*(n+m+1)+n .+ (1:m)] for t = 1:T]
     H = [Z0[(t-1)*(n+m+1)+n+m + 1] for t = 1:T-1]
 
     return X, U, H
@@ -94,13 +95,15 @@ function primal_bounds(prob::TrajectoryOptimizationProblem)
     Zl = -Inf*ones(N)
     Zu = Inf*ones(N)
 
-    for t = 1:T-1
+    for t = 1:T
         Zl[idx.x[t]] = (t==1 ? prob.x1 : prob.xl[t])
-        Zl[idx.u[t]] = prob.ul[t]
-        Zl[idx.h[t]] = prob.hl[t]
-
         Zu[idx.x[t]] = (t==1 ? prob.x1 : prob.xu[t])
+
+        Zl[idx.u[t]] = prob.ul[t]
         Zu[idx.u[t]] = prob.uu[t]
+
+        t==T && continue
+        Zl[idx.h[t]] = prob.hl[t]
         Zu[idx.h[t]] = prob.hu[t]
     end
 

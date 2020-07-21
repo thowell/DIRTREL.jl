@@ -41,8 +41,8 @@ Rw = deepcopy(R_lqr)
 
 # Problem
 prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
-                    ul=[ul*ones(model.nu) for t=1:T-1],
-                    uu=[uu*ones(model.nu) for t=1:T-1],
+                    ul=[ul*ones(model.nu) for t=1:T],
+                    uu=[uu*ones(model.nu) for t=1:T],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
                     integration=rk3_implicit,
@@ -61,7 +61,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation for states
-U0 = [0.01*randn(model.nu) for t = 1:T-1] # random controls
+U0 = [0.01*randn(model.nu) for t = 1:T] # random controls
 tf0 = 2.0
 h0 = tf0/(T-1) # timestep
 
@@ -92,10 +92,9 @@ for t = 2:T
 end
 
 # Control
-plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',
+plt = plot(t_nominal,Array(hcat(U_nominal...))',
     color=:purple,width=2.0,title="Pendulum",xlabel="time (s)",
-    ylabel="control",label="nominal",linelegend=:topleft,
-    linetype=:steppost)
+    ylabel="control",label="nominal",linelegend=:topleft)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',
     color=:orange,width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))

@@ -17,7 +17,7 @@ subject to      f(x+,x,u,h) = 0
                 hl <= h <= hu.            
 ```
 For simplicity of the implementation,
-robust constraints are only implemented for state and control bounds. 
+robust constraints are only implemented for state and control bounds.
 
 ## Installation
 ```code
@@ -41,6 +41,7 @@ the optimized trajectories differ slightly, but the qualitative behavior is simi
 
 ## TODO
 - [X] add linear robust state bounds
+- [ ] first-order-hold controls
 - [ ] add general robust constraints
 - [ ] replace ForwardDiff with analytical derivatives
 - [ ] compare results with SNOPT

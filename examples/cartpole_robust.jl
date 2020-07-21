@@ -43,8 +43,8 @@ Rw = deepcopy(R_lqr)
 
 # Problem
 prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
-                    ul=[ul*ones(model.nu) for t=1:T-1],
-                    uu=[uu*ones(model.nu) for t=1:T-1],
+                    ul=[ul*ones(model.nu) for t=1:T],
+                    uu=[uu*ones(model.nu) for t=1:T],
                     hl=[hl for t=1:T-1],
                     hu=[hu for t=1:T-1],
                     integration=rk3_implicit,
@@ -63,7 +63,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Trajectory initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation on state
-U0 = [0.001*rand(model.nu) for t = 1:T-1] # random controls
+U0 = [0.001*rand(model.nu) for t = 1:T] # random controls
 
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
@@ -89,9 +89,9 @@ end
 # Plots results
 
 # Control
-plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,
+plt = plot(t_nominal,Array(hcat(U_nominal...))',color=:purple,width=2.0,
     title="Cartpole",xlabel="time (s)",ylabel="control",label="nominal",
-    legend=:topright,linetype=:steppost)
+    legend=:topright)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
     width=2.0,label="robust",linetype=:steppost)
 savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
