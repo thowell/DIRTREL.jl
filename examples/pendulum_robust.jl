@@ -33,7 +33,7 @@ D = Diagonal([0.2^2])
 
 # TVLQR cost
 Q_lqr = [t < T ? Diagonal([10.0;1.0]) : Diagonal([100.0; 100.0]) for t = 1:T]
-R_lqr = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
+R_lqr = [0.5*Diagonal(0.1*ones(model.nu)) for t = 1:T]
 
 # Robust cost
 Qw = deepcopy(Q_lqr)
@@ -53,7 +53,7 @@ prob_robust = robust_problem(prob,model.nw,
     Q_lqr,R_lqr,
     Qw,Rw,
     E1,H1,D,
-    robust_control_bnds=true)
+    robust_control_bnds=false)
 
 # MathOptInterface problem
 prob_moi = init_MOI_Problem(prob)
@@ -61,7 +61,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation for states
-U0 = [0.01*randn(model.nu) for t = 1:T] # random controls
+U0 = [0.001*randn(model.nu) for t = 1:T] # random controls
 tf0 = 2.0
 h0 = tf0/(T-1) # timestep
 

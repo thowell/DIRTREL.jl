@@ -1,7 +1,7 @@
 function linearize_trajectories(Z,n,m,T,idx,nw,w,model,integration)
     # linearize about nominal trajectories
     A = [zeros(eltype(Z),n,n) for t = 1:T-1]
-    B = [zeros(eltype(Z),n,m) for t = 1:T-1]
+    B = [zeros(eltype(Z),n,2*m) for t = 1:T-1]
     G = [zeros(eltype(Z),n,nw) for t = 1:T-1]
 
     for t = 1:T-1
@@ -15,11 +15,12 @@ function linearize_trajectories(Z,n,m,T,idx,nw,w,model,integration)
         dyn_u(z) = integration(model,x⁺,x,u⁺,z,w,h)
         dyn_w(z) = integration(model,x⁺,x,u⁺,u,z,h)
         dyn_x⁺(z) = integration(model,z,x,u⁺,u,w,h)
+        dyn_u⁺(z) = integration(model,x⁺,x,z,u,w,h)
 
-        # (see implicit function theorem)
+        # (implicit function theorem)
         A⁺ = ForwardDiff.jacobian(dyn_x⁺,x⁺)
         A[t] = -A⁺\ForwardDiff.jacobian(dyn_x,x)
-        B[t] = -A⁺\ForwardDiff.jacobian(dyn_u,u)
+        B[t] = -A⁺\[ForwardDiff.jacobian(dyn_u,u) ForwardDiff.jacobian(dyn_u⁺,u⁺)]
         G[t] = -A⁺\ForwardDiff.jacobian(dyn_w,w)
     end
 
@@ -31,8 +32,9 @@ function tvlqr(Z,A,B,Q_lqr,R_lqr,n,m,T)
 
     P = Q_lqr[T]
     for t = T-1:-1:1
-        K[t] = (R_lqr[t] + B[t]'*P*B[t])\(B[t]'*P*A[t])
-        P = Q_lqr[t] + K[t]'*R_lqr[t]*K[t] + (A[t] - B[t]*K[t])'*P*(A[t] - B[t]*K[t])
+        R = cat(R_lqr[t],R_lqr[t+1],dims=(1,2))
+        K[t] = (R + B[t]'*P*B[t])\(B[t]'*P*A[t])
+        P = Q_lqr[t] + K[t]'*R*K[t] + (A[t] - B[t]*K[t])'*P*(A[t] - B[t]*K[t])
     end
 
     return K
