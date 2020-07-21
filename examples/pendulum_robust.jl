@@ -95,8 +95,8 @@ end
 plt = plot(t_nominal,Array(hcat(U_nominal...))',
     color=:purple,width=2.0,title="Pendulum",xlabel="time (s)",
     ylabel="control",label="nominal",linelegend=:topleft)
-plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',
-    color=:orange,width=2.0,label="robust",linetype=:steppost)
+plt = plot!(t_robust,Array(hcat(U_robust...))',
+    color=:orange,width=2.0,label="robust")
 savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
 
 # States

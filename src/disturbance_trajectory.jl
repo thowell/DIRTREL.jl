@@ -9,11 +9,12 @@ function linearize_trajectories(Z,n,m,T,idx,nw,w,model,integration)
         u = view(Z,idx.u[t])
         h = Z[idx.h[t]]
         x⁺ = view(Z,idx.x[t+1])
+        u⁺ = view(Z,idx.u[t+1])
 
-        dyn_x(z) = integration(model,x⁺,z,u,w,h)
-        dyn_u(z) = integration(model,x⁺,x,z,w,h)
-        dyn_w(z) = integration(model,x⁺,x,u,z,h)
-        dyn_x⁺(z) = integration(model,z,x,u,w,h)
+        dyn_x(z) = integration(model,x⁺,z,u⁺,u,w,h)
+        dyn_u(z) = integration(model,x⁺,x,u⁺,z,w,h)
+        dyn_w(z) = integration(model,x⁺,x,u⁺,u,z,h)
+        dyn_x⁺(z) = integration(model,z,x,u⁺,u,w,h)
 
         # (see implicit function theorem)
         A⁺ = ForwardDiff.jacobian(dyn_x⁺,x⁺)

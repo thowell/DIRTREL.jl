@@ -16,9 +16,11 @@ end
 
 function stage_cost(model,x⁺,x,u⁺,u,Q,R,x⁺_ref,x_ref,u⁺_ref,u_ref,h,c,w)
     xm = xm_rk3_implicit(model,x⁺,x,u⁺,u,w,h)
-    xm_ref = xm_rk3_implicit(model,x⁺_ref,x_ref,u⁺_ref,u_ref,w,h) #TODO precompute
     um = u_midpoint(u⁺,u)
+
+    xm_ref = xm_rk3_implicit(model,x⁺_ref,x_ref,u⁺_ref,u_ref,w,h) #TODO precompute
     um_ref = u_midpoint(u⁺_ref,u_ref) # TODO precompute
+
     ℓ1 = quadratic_cost(x,u,Q,R,x_ref,u_ref)
     ℓ2 = quadratic_cost(xm,um,Q,R,xm_ref,um_ref)
     ℓ3 = quadratic_cost(x⁺,u⁺,Q,R,x⁺_ref,u⁺_ref)
