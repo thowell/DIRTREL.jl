@@ -13,6 +13,19 @@ function constraint_bounds(prob::MOI.AbstractNLPEvaluator)
     return constraint_bounds(prob.prob)
 end
 
+function sparsity_jacobian(n,m; shift_r=0,shift_c=0)
+
+    row = []
+    col = []
+
+    r = shift_r .+ (1:m)
+    c = shift_c .+ (1:n)
+
+    row_col!(row,col,r,c)
+
+    return collect(zip(row,col))
+end
+
 function MOI.eval_objective(prob::MOI.AbstractNLPEvaluator, x)
     return eval_objective(prob.prob,x)
 end

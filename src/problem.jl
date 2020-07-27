@@ -23,6 +23,8 @@ mutable struct TrajectoryOptimizationProblem <: Problem
     integration # dynamics integration scheme
     obj    # objective
     goal_constraint
+    con
+    m_con
 end
 
 function init_problem(n,m,T,x1,xT,model,obj;
@@ -33,11 +35,13 @@ function init_problem(n,m,T,x1,xT,model,obj;
         hl=[-Inf for t = 1:T-1],
         hu=[Inf for t = 1:T-1],
         integration=rk3_implicit,
-        goal_constraint::Bool=true)
+        goal_constraint::Bool=true,
+        con=(x,u)->nothing,
+        m_con=0)
 
     idx = init_indices(n,m,T)
     N = n*T + m*(T-1) + (T-1)
-    M = n*(T-1) + (T-2)
+    M = n*(T-1) + (T-2) + m_con
 
     return TrajectoryOptimizationProblem(n,m,T,N,M,
         x1,xT,
@@ -47,7 +51,9 @@ function init_problem(n,m,T,x1,xT,model,obj;
         idx,
         model,integration,
         obj,
-        goal_constraint)
+        goal_constraint,
+        con,
+        m_con)
 end
 
 function pack(X0,U0,h0,prob::TrajectoryOptimizationProblem)
@@ -119,6 +125,7 @@ function constraint_bounds(prob::TrajectoryOptimizationProblem)
 
     cl = zeros(M)
     cu = zeros(M)
+    cu[n*(T-1) + (T-2) .+ (1:prob.m_con)] = Inf*ones(prob.m_con)
 
     return cl, cu
 end
@@ -133,17 +140,35 @@ function eval_objective_gradient!(∇l,Z,prob::TrajectoryOptimizationProblem)
 end
 
 function eval_constraint!(c,Z,prob::TrajectoryOptimizationProblem)
-    dynamics_constraints!(c,Z,
+    n = prob.n
+    m = prob.m
+    T = prob.T
+
+    dynamics_constraints!(view(c,1:(n*(T-1) + (T-2))),Z,
         prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+
+    prob.m_con > 0 && prob.con(view(c,(n*(T-1) + (T-2)) .+ (1:prob.m_con)),Z,prob.idx,T)
+
     return nothing
 end
 
 function eval_constraint_jacobian!(∇c,Z,prob::TrajectoryOptimizationProblem)
-    sparse_dynamics_constraints_jacobian!(∇c,Z,
+    len_dyn_jac = length(sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T))
+    sparse_dynamics_constraints_jacobian!(view(∇c,1:len_dyn_jac),Z,
         prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
+
+    if prob.m_con > 0
+        con(c,x) = prob.con(c,x,prob.idx,prob.T)
+        ∇c[len_dyn_jac .+ (1:prob.m_con*prob.N)] = vec(ForwardDiff.jacobian(con,zeros(prob.m_con),Z))
+    end
     return nothing
 end
 
 function sparsity_jacobian(prob::TrajectoryOptimizationProblem)
-    sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
+    n = prob.n
+    m = prob.m
+    T = prob.T
+    sparsity_dynamics = sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
+    sparsity_con = sparsity_jacobian(prob.N,prob.m_con,shift_r=(n*(T-1) + (T-2)))
+    collect([sparsity_dynamics...,sparsity_con...])
 end
