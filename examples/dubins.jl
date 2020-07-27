@@ -83,6 +83,7 @@ U0 = [0.1*rand(model.nu) for t = 1:T-1] # random controls
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
 
+# test methods
 m_con_obstacles = 1
 M_con = m_con_obstacles*(T-2)
 
@@ -101,6 +102,38 @@ for (i,k) in enumerate(sp)
 end
 norm(vec(∇c) - vec(ForwardDiff.jacobian(tmp,c_obs,Z0)))
 
+m_con_robust = num_robust_general_bounds(m_con_obstacles,model.nx,model.nu,T)
+c_robust = zeros(m_con_robust)
+prob_robust.w0
+prob.integration
+stage_constraints_robust!(c_robust,Z0,model.nx,model.nu,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D,
+        con_obstacles!,m_con_obstacles)
+
+compute_δx(Z0,model.nx,model.nu,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D)
+tmp_δx(z) = compute_δx(z,model.nx,model.nu,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D)
+norm(vec(ForwardDiff.jacobian(tmp_δx,Z0)) - vec(compute_∇δx(Z0,model.nx,model.nu,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D)))
+
+
+
+tmp_scr(c,z) = stage_constraints_robust!(c,z,model.nx,model.nu,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D,
+        con_obstacles!,m_con_obstacles)
+ForwardDiff.jacobian(tmp_scr,zeros(m_con_robust),Z0)
+sc_sparsity = stage_constraints_robust_sparsity(model.nx,model.nu,prob.N,T,prob.idx,m_con_obstacles)
+l_sc = length(sc_sparsity)
+∇c_robust_vec = zeros(l_sc)
+∇stage_constraints_robust!(∇c_robust_vec,Z0,model.nx,model.nu,prob.N,T,prob.idx,prob_robust.nw,prob_robust.w0,model,prob.integration,Q_lqr,R_lqr,Qw,Rw,prob_robust.E1,prob_robust.H1,prob_robust.D,
+        con_obstacles!,m_con_obstacles)
+∇c_robust = zeros(m_con_robust,prob.N)
+
+for (i,k) in enumerate(sc_sparsity)
+    ∇c_robust[k[1],k[2]] = ∇c_robust_vec[i]
+end
+norm(vec(∇c_robust))
+norm(vec(ForwardDiff.jacobian(tmp_scr,zeros(m_con_robust),Z0)))
+
+norm(vec(∇c_robust) - vec(ForwardDiff.jacobian(tmp_scr,zeros(m_con_robust),Z0)))
+sum(vec(∇c_robust))
+sum(vec(ForwardDiff.jacobian(tmp_scr,zeros(m_con_robust),Z0)))
 # Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
 

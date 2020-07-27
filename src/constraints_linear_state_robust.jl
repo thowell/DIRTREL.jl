@@ -39,7 +39,7 @@ function compute_∇δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1
     ∇E = ForwardDiff.jacobian(gen_E,Z)
 
     N = length(Z)
-    ∇δx = zeros(eltype(Z),n*n*(T-1),N)
+    ∇δx = zeros(eltype(Z),n*n*T,N)
     In = Diagonal(ones(n))
     for t = 1:T
        r_idx = (t-1)*n*n .+ (1:n*n)

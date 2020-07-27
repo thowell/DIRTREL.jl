@@ -27,7 +27,7 @@ function fastsqrt(A)
 
     T = .5*(T + inv(S+Ep));
     S = .5*(S+In);
-    for k = 1:4
+    for k = 1:20
         Snew = .5*(S + inv(T+Ep));
         T = .5*(T + inv(S+Ep));
         S = Snew;
