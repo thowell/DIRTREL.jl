@@ -61,7 +61,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation for states
-U0 = [0.01*randn(model.nu) for t = 1:T-1] # random controls
+U0 = [0.1*randn(model.nu) for t = 1:T-1] # random controls
 tf0 = 2.0
 h0 = tf0/(T-1) # timestep
 

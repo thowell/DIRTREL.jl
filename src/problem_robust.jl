@@ -135,7 +135,7 @@ end
 
 function eval_objective(prob_robust::RobustProblem,Z)
     prob = prob_robust.prob
-    return (objective(Z,prob.obj,prob.model,prob.idx,prob.T)
+    return (eval_objective(prob,Z)
             + robust_cost(Z,
                 prob.n,prob.m,prob.T,
                 prob.idx,
@@ -155,7 +155,7 @@ end
 function eval_objective_gradient!(∇l,Z,prob_robust::RobustProblem)
     prob = prob_robust.prob
 
-    objective_gradient!(∇l,Z,prob.obj,prob.model,prob.idx,prob.T)
+    eval_objective_gradient!(∇l,Z,prob)
 
     tmp(z) = robust_cost(z,
                         prob.n,prob.m,prob.T,prob.idx,
@@ -171,29 +171,25 @@ end
 function eval_constraint!(c,Z,prob_robust::RobustProblem)
     prob = prob_robust.prob
 
-    dynamics_constraints!(view(c,1:prob.M),Z,
-        prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
-
+    eval_constraint!(view(c,1:prob.M),Z,prob)
     constraints_robust!(view(c,prob.M .+ (1:prob_robust.M_robust)),Z,prob_robust)
 
     return nothing
 end
 
 function eval_constraint_jacobian!(∇c,Z,prob_robust::RobustProblem)
-    prob = prob_robust.prob
-    sparsity_dynamics = sparsity_jacobian(prob)
-    L = length(sparsity_dynamics)
+   prob = prob_robust.prob
+   sparsity_dynamics = sparsity_jacobian(prob)
+   L = length(sparsity_dynamics)
 
-    sparse_dynamics_constraints_jacobian!(view(∇c,1:L),Z,
-        prob.idx,prob.n,prob.m,prob.T,prob.model,prob.integration)
-
-    constraints_robust_jacobian!(reshape(view(∇c,L .+ (1:prob_robust.M_robust*prob.N)),prob_robust.M_robust,prob.N),Z,prob_robust)
-    return nothing
+   eval_constraint_jacobian!(view(∇c,1:L),Z,prob)
+   constraints_robust_jacobian!(reshape(view(∇c,L .+ (1:prob_robust.M_robust*prob.N)),prob_robust.M_robust,prob.N),Z,prob_robust)
+   return nothing
 end
 
 function sparsity_jacobian(prob_robust::RobustProblem)
     prob = prob_robust.prob
-    sparsity_dynamics = sparsity_dynamics_jacobian(prob.idx,prob.n,prob.m,prob.T)
+    sparsity = sparsity_jacobian(prob)
     sparsity_robust = sparsity_robust_constraints(prob_robust,shift=prob.M)
-    return vcat(sparsity_dynamics...,sparsity_robust)
+    return collect([sparsity...,sparsity_robust...])
 end

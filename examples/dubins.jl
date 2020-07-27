@@ -51,11 +51,11 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
-D = Diagonal([4.0])
+D = Diagonal([1.0])
 
 # TVLQR cost
-Q_lqr = [t < T ? Diagonal([10.0;10.0;1.0;1.0]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
-R_lqr = [Diagonal(1.0*ones(model.nu)) for t = 1:T-1]
+Q_lqr = [t < T ? Diagonal([1.0;1.0;1.0e-1]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
+R_lqr = [Diagonal(1.0e-1*ones(model.nu)) for t = 1:T-1]
 
 # Robust cost
 Qw = deepcopy(Q_lqr)
@@ -90,26 +90,26 @@ U0 = [0.001*rand(model.nu) for t = 1:T-1] # random controls
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
 
-cc = zeros(prob.m_con)
-con_obstacles!(cc,Z0,prob.idx,T)
-con(c,Z) = con_obstacles!(c,Z,prob.idx,prob.T)
-sum(ForwardDiff.jacobian(con,cc,Z0))
-
 # Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
 
 X_nom, U_nom, H_nom = unpack(Z_nominal,prob)
-x_pos = [X_nom[t][1] for t = 1:T]
-y_pos = [X_nom[t][2] for t = 1:T]
+x_nom_pos = [X_nom[t][1] for t = 1:T]
+y_nom_pos = [X_nom[t][2] for t = 1:T]
 pts = Plots.partialcircle(0,2π,100,r)
 cx,cy = Plots.unzip(pts)
 cx .+= xc
 cy .+= yc
 plot(Shape(cx,cy),color=:red,label="",linecolor=:red)
-plot!(x_pos,y_pos,aspect_ratio=:equal,width=2.0,label="",color=:black)
+plot!(x_nom_pos,y_nom_pos,aspect_ratio=:equal,width=2.0,label="nominal",color=:black,legend=:topleft)
 
 # Solve robust problem
 @time Z_robust = solve(prob_robust_moi,copy(Z0))
+
+X_robust, U_robust, H_robust = unpack(Z_robust,prob)
+x_robust_pos = [X_robust[t][1] for t = 1:T]
+y_robust_pos = [X_robust[t][2] for t = 1:T]
+plot!(x_robust_pos,y_robust_pos,aspect_ratio=:equal,width=2.0,label="robust (cost)",color=:cyan,legend=:topleft)
 
 # Unpack solutions
 X_nominal, U_nominal, H_nominal = unpack(Z_nominal,prob)
