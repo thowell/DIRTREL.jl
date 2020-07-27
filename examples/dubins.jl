@@ -14,7 +14,7 @@ ul = -3.0
 # h = h0 (fixed timestep)
 tf0 = 2.5
 h0 = tf0/(T-1)
-hu = 0.5
+hu = 0.1
 hl = 0.0
 
 # Initial and final states
@@ -27,26 +27,19 @@ xc = 0.5
 yc = 0.5
 
 # Constraints
-function con_obstacles!(c,Z,idx,T)
-    shift = 0
-    for t = 2:T-1
-        X = Z[idx.x[t]]
-        x = X[1]
-        y = X[2]
-        c[shift + 1] = circle_obs(x,y,xc,yc,r)
-        shift += 1
-    end
+function con_obstacles!(c,x,u)
+    c[1] = circle_obs(x[1],x[2],xc,yc,r)
     nothing
 end
 
-m_con_obstacles = T-2
+m_con_obstacles = 1
 
 # Objective
 Q = [t < T ? Diagonal(zeros(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
 R = [Diagonal(zeros(model.nu)) for t = 1:T-1]
 c = 1.0
 obj = QuadraticTrackingObjective(Q,R,c,
-    [xT for t=1:T],[zeros(model.nu) for t=1:T]) # NOTE: there is a discrepancy between paper and DRAKE
+    [xT for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))
@@ -85,10 +78,28 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Trajectory initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation on state
-U0 = [0.001*rand(model.nu) for t = 1:T-1] # random controls
+U0 = [0.1*rand(model.nu) for t = 1:T-1] # random controls
 
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
+
+m_con_obstacles = 1
+M_con = m_con_obstacles*(T-2)
+
+c_obs = zeros(M_con)
+stage_constraints!(c_obs,Z0,prob.idx,T,con_obstacles!,m_con_obstacles)
+tmp(c,z) = stage_constraints!(c,z,prob.idx,T,con_obstacles!,m_con_obstacles)
+
+sp = stage_constraint_sparsity(prob.idx,T,m_con_obstacles)
+ln = length(sp)
+∇c_vec = zeros(ln)
+∇c = zeros(M_con,prob.N)
+∇stage_constraints!(∇c_vec,Z0,prob.idx,T,con_obstacles!,m_con_obstacles)
+ForwardDiff.jacobian(tmp,c_obs,Z0)[1,prob.idx.x[2]]
+for (i,k) in enumerate(sp)
+    ∇c[k[1],k[2]] = ∇c_vec[i]
+end
+norm(vec(∇c) - vec(ForwardDiff.jacobian(tmp,c_obs,Z0)))
 
 # Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
@@ -102,6 +113,7 @@ cx .+= xc
 cy .+= yc
 plot(Shape(cx,cy),color=:red,label="",linecolor=:red)
 plot!(x_nom_pos,y_nom_pos,aspect_ratio=:equal,width=2.0,label="nominal",color=:black,legend=:topleft)
+# plot(hcat(U_nom...)')
 
 # Solve robust problem
 @time Z_robust = solve(prob_robust_moi,copy(Z0))
@@ -122,6 +134,9 @@ for t = 2:T
     t_nominal[t] = t_nominal[t-1] + H_nominal[t-1]
     t_robust[t] = t_robust[t-1] + H_robust[t-1]
 end
+
+display("time (nominal): $(sum(H_nominal))s")
+display("time (robust): $(sum(H_robust))s")
 
 # Plots results
 
