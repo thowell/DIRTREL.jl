@@ -33,22 +33,26 @@ function compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1
     return δx
 end
 
-function compute_∇δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    E = compute_E_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    gen_E(z) = compute_E_vec(z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    ∇E = ForwardDiff.jacobian(gen_E,Z)
-
-    N = length(Z)
-    ∇δx = zeros(eltype(Z),n*n*T,N)
-    In = Diagonal(ones(n))
-    for t = 1:T
-       r_idx = (t-1)*n*n .+ (1:n*n)
-       e_sqrt = fastsqrt(reshape(E[r_idx],n,n))
-       ∇δx[r_idx,1:N] = inv(kron(In,e_sqrt) + kron(e_sqrt,In))*∇E[r_idx,1:N]
-    end
-
-    return ∇δx
-end
+# function compute_∇δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#
+#     tmp(z) = compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#
+#     return ForwardDiff.jacobian(tmp,Z)
+#     # E = compute_E_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     # gen_E(z) = compute_E_vec(z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     # ∇E = ForwardDiff.jacobian(gen_E,Z)
+#     #
+#     # N = length(Z)
+#     # ∇δx = zeros(eltype(Z),n*n*T,N)
+#     # In = Diagonal(ones(n))
+#     # for t = 1:T
+#     #    r_idx = (t-1)*n*n .+ (1:n*n)
+#     #    e_sqrt = fastsqrt(reshape(E[r_idx],n,n))
+#     #    ∇δx[r_idx,1:N] = inv(kron(In,e_sqrt) + kron(e_sqrt,In))*∇E[r_idx,1:N]
+#     # end
+#     #
+#     # return ∇δx
+# end
 
 function xw_bounds!(c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δx = compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
@@ -73,31 +77,31 @@ function xw_bounds!(c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
     return nothing
 end
 
-function ∇xw_bounds!(∇c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    ∇δx = compute_∇δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    N = length(Z)
-    shift = 0
-    for t = 2:T-1
-        for j = 1:n
-
-            ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
-            shift += n
-
-            ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
-            shift += n
-
-            ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
-            shift += n
-
-            ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
-            shift += n
-        end
-    end
-end
+# function ∇xw_bounds!(∇c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     ∇δx = compute_∇δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     N = length(Z)
+#     shift = 0
+#     for t = 2:T-1
+#         for j = 1:n
+#
+#             ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
+#             shift += n
+#
+#             ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
+#             shift += n
+#
+#             ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
+#             shift += n
+#
+#             ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
+#             shift += n
+#         end
+#     end
+# end
 
 function num_robust_state_bounds(n,T)
     return 2*(2*n*n*(T-2))

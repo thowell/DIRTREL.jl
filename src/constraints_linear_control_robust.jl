@@ -33,22 +33,25 @@ function compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1
     return δu
 end
 
-function compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    KEK = compute_KEK_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    gen_KEK(z) = compute_KEK_vec(z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    ∇KEK = ForwardDiff.jacobian(gen_KEK,Z)
-
-    N = length(Z)
-    ∇δu = zeros(eltype(Z),m*m*(T-1),N)
-    Im = Diagonal(ones(m))
-    for t = 1:T-1
-       r_idx = (t-1)*m*m .+ (1:m*m)
-       kek_sqrt = fastsqrt(reshape(KEK[r_idx],m,m))
-       ∇δu[r_idx,1:N] = inv(kron(Im,kek_sqrt) + kron(kek_sqrt,Im))*∇KEK[r_idx,1:N]
-    end
-
-    return ∇δu
-end
+# function compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     tmp(z) = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#
+#     return ForwardDiff.jacobian(tmp,Z)
+#     # KEK = compute_KEK_vec(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     # gen_KEK(z) = compute_KEK_vec(z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     # ∇KEK = ForwardDiff.jacobian(gen_KEK,Z)
+#     #
+#     # N = length(Z)
+#     # ∇δu = zeros(eltype(Z),m*m*(T-1),N)
+#     # Im = Diagonal(ones(m))
+#     # for t = 1:T-1
+#     #    r_idx = (t-1)*m*m .+ (1:m*m)
+#     #    kek_sqrt = fastsqrt(reshape(KEK[r_idx],m,m))
+#     #    ∇δu[r_idx,1:N] = inv(kron(Im,kek_sqrt) + kron(kek_sqrt,Im))*∇KEK[r_idx,1:N]
+#     # end
+#
+#     return ∇δu
+# end
 
 function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
@@ -72,34 +75,34 @@ function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
     return nothing
 end
 
-function ∇uw_bounds!(∇c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    ∇δu = compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
-    N = length(Z)
-    shift = 0
-    for t = 1:T-1
-        for j = 1:m
-            # _δu = δu[(t-1)*m*m + (j-1)*m .+ (1:m)]
-            # uw⁺ = Z[idx.u[t]] + _δu
-            # uw⁻ = Z[idx.u[t]] - _δu
-            # c[shift .+ (1:m)] = uw⁺ - uu[t] # upper bounds
-            ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
-            shift += m
-            # c[shift .+ (1:m)] = uw⁻ - uu[t] # upper bounds
-            ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
-            shift += m
-            # c[shift .+ (1:m)] = ul[t] - uw⁺ # lower bounds
-            ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
-            shift += m
-            # c[shift .+ (1:m)] = ul[t] - uw⁻ # lower bounds
-            ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
-            shift += m
-        end
-    end
-end
+# function ∇uw_bounds!(∇c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     ∇δu = compute_∇δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
+#     N = length(Z)
+#     shift = 0
+#     for t = 1:T-1
+#         for j = 1:m
+#             # _δu = δu[(t-1)*m*m + (j-1)*m .+ (1:m)]
+#             # uw⁺ = Z[idx.u[t]] + _δu
+#             # uw⁻ = Z[idx.u[t]] - _δu
+#             # c[shift .+ (1:m)] = uw⁺ - uu[t] # upper bounds
+#             ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
+#             shift += m
+#             # c[shift .+ (1:m)] = uw⁻ - uu[t] # upper bounds
+#             ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
+#             shift += m
+#             # c[shift .+ (1:m)] = ul[t] - uw⁺ # lower bounds
+#             ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
+#             shift += m
+#             # c[shift .+ (1:m)] = ul[t] - uw⁻ # lower bounds
+#             ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+#             ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
+#             shift += m
+#         end
+#     end
+# end
 
 function num_robust_control_bounds(m,T)
     return 2*(2*m*m*(T-1))

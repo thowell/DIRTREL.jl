@@ -23,22 +23,24 @@ xT = [1.0; 1.0; 0.0]
 
 # Circle obstacle
 r = 0.1
-xc1 = 0.7
-yc1 = 0.5
-xc2 = 0.6
+xc1 = 0.85
+yc1 = 0.3
+xc2 = 0.375
 yc2 = 0.75
 xc3 = 0.25
-yc3 = 0.4
+yc3 = 0.25
+xc4 = 0.75
+yc4 = 0.75
 
 # Constraints
 function con_obstacles!(c,x,u)
     c[1] = circle_obs(x[1],x[2],xc1,yc1,r)
     c[2] = circle_obs(x[1],x[2],xc2,yc2,r)
     c[3] = circle_obs(x[1],x[2],xc3,yc3,r)
+    c[4] = circle_obs(x[1],x[2],xc4,yc4,r)
     nothing
 end
-
-m_con_obstacles = 3
+m_con_obstacles = 4
 
 # Objective
 Q = [t < T ? Diagonal(zeros(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
@@ -50,7 +52,7 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
-D = Diagonal([0.1])
+D = Diagonal([1.0])
 
 # TVLQR cost
 Q_lqr = [t < T ? Diagonal([10.0;10.0;1.0]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
@@ -86,7 +88,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Trajectory initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation on state
-U0 = [0.001*rand(model.nu) for t = 1:T-1] # random controls
+U0 = [0.01*rand(model.nu) for t = 1:T-1] # random controls
 
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)
@@ -167,7 +169,6 @@ Z0 = pack(X0,U0,h0,prob)
 #
 # pinv(kron(In,sqrt(A0)) + kron(sqrt(A0)',In))
 
-
 #NOTE: may need to run examples multiple times to get good trajectories
 # Solve nominal problem
 @time Z_nominal = solve(prob_moi,copy(Z0))
@@ -202,9 +203,12 @@ cx2 = [_cx + xc2 for _cx in cx]
 cy2 = [_cy + yc2 for _cy in cy]
 cx3 = [_cx + xc3 for _cx in cx]
 cy3 = [_cy + yc3 for _cy in cy]
+cx4 = [_cx + xc4 for _cx in cx]
+cy4 = [_cy + yc4 for _cy in cy]
 plt = plot(Shape(cx1,cy1),color=:red,label="",linecolor=:red)
 plt = plot!(Shape(cx2,cy2),color=:red,label="",linecolor=:red)
 plt = plot!(Shape(cx3,cy3),color=:red,label="",linecolor=:red)
+plt = plot!(Shape(cx4,cy4),color=:red,label="",linecolor=:red)
 plt = plot!(x_nom_pos,y_nom_pos,aspect_ratio=:equal,xlabel="x",ylabel="y",width=2.0,label="nominal",color=:purple,legend=:topleft)
 
 x_robust_pos = [X_robust[t][1] for t = 1:T]
