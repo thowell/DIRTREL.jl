@@ -60,13 +60,13 @@ function xw_bounds!(c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
             _δx = δx[(t-1)*n*n + (j-1)*n .+ (1:n)]
             xw⁺ = Z[idx.x[t]] + _δx
             xw⁻ = Z[idx.x[t]] - _δx
-            c[shift .+ (1:n)] = xw⁺ - xu[t] # upper bounds
+            c[shift .+ (1:n)] = -xw⁺ + xu[t] # upper bounds
             shift += n
-            c[shift .+ (1:n)] = xw⁻ - xu[t] # upper bounds
+            c[shift .+ (1:n)] = -xw⁻ + xu[t] # upper bounds
             shift += n
-            c[shift .+ (1:n)] = xl[t] - xw⁺ # lower bounds
+            c[shift .+ (1:n)] = -xl[t] + xw⁺ # lower bounds
             shift += n
-            c[shift .+ (1:n)] = xl[t] - xw⁻ # lower bounds
+            c[shift .+ (1:n)] = -xl[t] + xw⁻ # lower bounds
             shift += n
         end
     end
@@ -80,20 +80,20 @@ function ∇xw_bounds!(∇c,Z,xl,xu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lq
     for t = 2:T-1
         for j = 1:n
 
-            ∇c[shift .+ (1:n),1:N] = ∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
-            shift += n
-
-            ∇c[shift .+ (1:n),1:N] = -1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
-            shift += n
-
-            ∇c[shift .+ (1:n),1:N] = -1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+            ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
             shift += n
 
-            ∇c[shift .+ (1:n),1:N] = ∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+            ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
             ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= -1.0
+            shift += n
+
+            ∇c[shift .+ (1:n),1:N] = 1.0*∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
+            shift += n
+
+            ∇c[shift .+ (1:n),1:N] = -∇δx[(t-1)*n*n + (j-1)*n .+ (1:n),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:n),idx.x[t])] .= 1.0
             shift += n
         end
     end

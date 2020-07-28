@@ -16,10 +16,10 @@ function fastsqrt(A)
     #S = sqrtm(A);
     Ep = 1e-8*Matrix(I,size(A))
 
-    if count(diag(A) .> 0.0) != size(A,1)
-        S = diagm(sqrt.(diag(A)));
-        return S
-    end
+    # if count(diag(A) .> 0.0) != size(A,1)
+    #     S = diagm(sqrt.(diag(A)));
+    #     return S
+    # end
 
     In = Matrix(1.0*I,size(A));
     S = A;
@@ -27,7 +27,7 @@ function fastsqrt(A)
 
     T = .5*(T + inv(S+Ep));
     S = .5*(S+In);
-    for k = 1:20
+    for k = 1:4
         Snew = .5*(S + inv(T+Ep));
         T = .5*(T + inv(S+Ep));
         S = Snew;

@@ -59,13 +59,13 @@ function uw_bounds!(c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,R
             _δu = δu[(t-1)*m*m + (j-1)*m .+ (1:m)]
             uw⁺ = Z[idx.u[t]] + _δu
             uw⁻ = Z[idx.u[t]] - _δu
-            c[shift .+ (1:m)] = uw⁺ - uu[t] # upper bounds
+            c[shift .+ (1:m)] = -uw⁺ + uu[t] # upper bounds
             shift += m
-            c[shift .+ (1:m)] = uw⁻ - uu[t] # upper bounds
+            c[shift .+ (1:m)] = -uw⁻ + uu[t] # upper bounds
             shift += m
-            c[shift .+ (1:m)] = ul[t] - uw⁺ # lower bounds
+            c[shift .+ (1:m)] = -ul[t] + uw⁺ # lower bounds
             shift += m
-            c[shift .+ (1:m)] = ul[t] - uw⁻ # lower bounds
+            c[shift .+ (1:m)] = -ul[t] + uw⁻ # lower bounds
             shift += m
         end
     end
@@ -82,20 +82,20 @@ function ∇uw_bounds!(∇c,Z,ul,uu,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lq
             # uw⁺ = Z[idx.u[t]] + _δu
             # uw⁻ = Z[idx.u[t]] - _δu
             # c[shift .+ (1:m)] = uw⁺ - uu[t] # upper bounds
-            ∇c[shift .+ (1:m),1:N] = ∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
+            ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
             shift += m
             # c[shift .+ (1:m)] = uw⁻ - uu[t] # upper bounds
-            ∇c[shift .+ (1:m),1:N] = -1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
+            ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
             shift += m
             # c[shift .+ (1:m)] = ul[t] - uw⁺ # lower bounds
-            ∇c[shift .+ (1:m),1:N] = -1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
+            ∇c[shift .+ (1:m),1:N] = 1.0*∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
             shift += m
             # c[shift .+ (1:m)] = ul[t] - uw⁻ # lower bounds
-            ∇c[shift .+ (1:m),1:N] = ∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
-            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= -1.0
+            ∇c[shift .+ (1:m),1:N] = -∇δu[(t-1)*m*m + (j-1)*m .+ (1:m),1:N]
+            ∇c[CartesianIndex.(shift .+ (1:m),idx.u[t])] .= 1.0
             shift += m
         end
     end
