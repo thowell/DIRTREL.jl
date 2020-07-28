@@ -3,7 +3,7 @@ include("../dynamics/dubins.jl")
 using Plots
 
 # Horizon
-T = 20
+T = 30
 
 # Bounds
 
@@ -14,7 +14,7 @@ ul = -5.0
 # h = h0 (fixed timestep)
 tf0 = 1.0
 h0 = tf0/(T-1)
-hu = 0.1
+hu = 0.05
 hl = 0.0
 
 # Initial and final states
@@ -23,16 +23,22 @@ xT = [1.0; 1.0; 0.0]
 
 # Circle obstacle
 r = 0.1
-xc = 0.5
-yc = 0.5
+xc1 = 0.7
+yc1 = 0.5
+xc2 = 0.6
+yc2 = 0.75
+xc3 = 0.25
+yc3 = 0.4
 
 # Constraints
 function con_obstacles!(c,x,u)
-    c[1] = circle_obs(x[1],x[2],xc,yc,r)
+    c[1] = circle_obs(x[1],x[2],xc1,yc1,r)
+    c[2] = circle_obs(x[1],x[2],xc2,yc2,r)
+    c[3] = circle_obs(x[1],x[2],xc3,yc3,r)
     nothing
 end
 
-m_con_obstacles = 1
+m_con_obstacles = 3
 
 # Objective
 Q = [t < T ? Diagonal(zeros(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
@@ -44,10 +50,10 @@ obj = QuadraticTrackingObjective(Q,R,c,
 # Initial disturbances
 E1 = Diagonal(1.0e-8*ones(model.nx))
 H1 = zeros(model.nx,model.nw)
-D = Diagonal([1.0])
+D = Diagonal([0.1])
 
 # TVLQR cost
-Q_lqr = [t < T ? Diagonal([1.0;1.0;1.0e-1]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
+Q_lqr = [t < T ? Diagonal([10.0;10.0;1.0]) : Diagonal(100.0*ones(model.nx)) for t = 1:T]
 R_lqr = [Diagonal(1.0e-1*ones(model.nu)) for t = 1:T-1]
 
 # Robust cost
@@ -190,15 +196,21 @@ x_nom_pos = [X_nom[t][1] for t = 1:T]
 y_nom_pos = [X_nom[t][2] for t = 1:T]
 pts = Plots.partialcircle(0,2π,100,r)
 cx,cy = Plots.unzip(pts)
-cx .+= xc
-cy .+= yc
-plt = plot(Shape(cx,cy),color=:red,label="",linecolor=:red)
+cx1 = [_cx + xc1 for _cx in cx]
+cy1 = [_cy + yc1 for _cy in cy]
+cx2 = [_cx + xc2 for _cx in cx]
+cy2 = [_cy + yc2 for _cy in cy]
+cx3 = [_cx + xc3 for _cx in cx]
+cy3 = [_cy + yc3 for _cy in cy]
+plt = plot(Shape(cx1,cy1),color=:red,label="",linecolor=:red)
+plt = plot!(Shape(cx2,cy2),color=:red,label="",linecolor=:red)
+plt = plot!(Shape(cx3,cy3),color=:red,label="",linecolor=:red)
 plt = plot!(x_nom_pos,y_nom_pos,aspect_ratio=:equal,xlabel="x",ylabel="y",width=2.0,label="nominal",color=:purple,legend=:topleft)
 
 x_robust_pos = [X_robust[t][1] for t = 1:T]
 y_robust_pos = [X_robust[t][2] for t = 1:T]
-plt = plot!(x_robust_pos,y_robust_pos,aspect_ratio=:equal,width=2.0,label="robust (cost)",color=:orange,legend=:topleft)
-savefig(plt,joinpath(pwd(),"examples/results/dubins_state.png"))
+plt = plot!(x_robust_pos,y_robust_pos,aspect_ratio=:equal,width=2.0,label="robust (cost)",color=:orange,legend=:bottomright)
+savefig(plt,joinpath(@__DIR__,"results/dubins_state.png"))
 
 # Control
 plt = plot(t_nominal[1:T-1],Array(hcat(U_nom...))',color=:purple,width=2.0,
@@ -206,4 +218,4 @@ plt = plot(t_nominal[1:T-1],Array(hcat(U_nom...))',color=:purple,width=2.0,
     legend=:bottomright,linetype=:steppost)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
     width=2.0,label=["v (robust)" "ω (robust)"],linetype=:steppost)
-savefig(plt,joinpath(pwd(),"examples/results/dubins_control.png"))
+savefig(plt,joinpath(@__DIR__,"results/dubins_control.png"))

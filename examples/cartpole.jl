@@ -94,7 +94,7 @@ plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',color=:purple,width=2.0,
     legend=:topright,linetype=:steppost)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',color=:orange,
     width=2.0,label="robust",linetype=:steppost)
-savefig(plt,joinpath(pwd(),"examples/results/cartpole_control.png"))
+savefig(plt,joinpath(@__DIR__,"results/cartpole_control.png"))
 
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
@@ -114,4 +114,4 @@ plt = plot!(t_robust,hcat(X_robust...)[3,:],
     color=:orange,width=2.0,label="dx (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[4,:],
     color=:orange,width=2.0,label="dθ (robust)")
-savefig(plt,joinpath(pwd(),"examples/results/cartpole_state.png"))
+savefig(plt,joinpath(@__DIR__,"results/cartpole_state.png"))

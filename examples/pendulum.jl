@@ -98,7 +98,7 @@ plt = plot(t_nominal[1:T-1],Array(hcat(U_nominal...))',
     linetype=:steppost)
 plt = plot!(t_robust[1:T-1],Array(hcat(U_robust...))',
     color=:orange,width=2.0,label="robust",linetype=:steppost)
-savefig(plt,joinpath(pwd(),"examples/results/pendulum_control.png"))
+savefig(plt,joinpath(@__DIR__,"results/pendulum_control.png"))
 
 # States
 plt = plot(t_nominal,hcat(X_nominal...)[1,:],
@@ -107,4 +107,4 @@ plt = plot(t_nominal,hcat(X_nominal...)[1,:],
 plt = plot!(t_nominal,hcat(X_nominal...)[2,:],color=:purple,width=2.0,label="dθ (nominal)")
 plt = plot!(t_robust,hcat(X_robust...)[1,:],color=:orange,width=2.0,label="θ (robust)")
 plt = plot!(t_robust,hcat(X_robust...)[2,:],color=:orange,width=2.0,label="dθ (robust)")
-savefig(plt,joinpath(pwd(),"examples/results/pendulum_state.png"))
+savefig(plt,joinpath(@__DIR__,"results/pendulum_state.png"))
