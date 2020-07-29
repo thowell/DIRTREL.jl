@@ -100,7 +100,7 @@ Z0 = pack(X0,U0,h0,prob)
 # c_obs = zeros(M_con)
 # stage_constraints!(c_obs,Z0,prob.idx,T,con_obstacles!,m_con_obstacles)
 # tmp(c,z) = stage_constraints!(c,z,prob.idx,T,con_obstacles!,m_con_obstacles)
-#
+
 # sp = stage_constraint_sparsity(prob.idx,T,m_con_obstacles)
 # ln = length(sp)
 # ∇c_vec = zeros(ln)
