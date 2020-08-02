@@ -1,27 +1,27 @@
-function num_robust_stage(m_con,n,m,T; mode=:both)
+function num_robust_stage(m_stage,n,m,T; mode=:both)
     if mode == :both
-        return (m_con*(T-2))*(2*n)*(2*m)
+        return sum(m_stage[2:end])*(2*n)*(2*m)
     elseif mode == :state
-        return (m_con*(T-2))*(2*n)
+        return sum(m_stage[2:end])*(2*n)
     elseif mode == :control
-        return (m_con*(T-2))*(2*m)
+        return sum(m_stage[2:end])*(2*m)
     else
         return 0
     end
 end
 function stage_constraints_robust!(c,Z,n,m,T,idx,nw,w0,model,integration,
-        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con;
+        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage;
         mode=:both)
 
     if mode == :both
         stage_constraints_robust_both!(c,Z,n,m,T,idx,nw,w0,model,integration,
-            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
     elseif mode == :state
         stage_constraints_robust_state!(c,Z,n,m,T,idx,nw,w0,model,integration,
-            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
     elseif mode == :control
         stage_constraints_robust_control!(c,Z,n,m,T,idx,nw,w0,model,integration,
-            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+            Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
     else
         error("mode specified error")
     end
@@ -29,27 +29,27 @@ function stage_constraints_robust!(c,Z,n,m,T,idx,nw,w0,model,integration,
 end
 
 function ∇stage_constraints_robust!(∇c,Z,n,m,N,T,idx,nw,w0,model,integration,
-        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con;
+        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage;
         mode=:both)
 
     if mode == :both
-        M = num_robust_stage(m_con,n,m,T,mode=:both)
+        M = num_robust_stage(m_stage,n,m,T,mode=:both)
         tmp_both(c,z) = stage_constraints_robust_both!(c,z,n,m,T,idx,nw,w0,model,integration,
-                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
         ForwardDiff.jacobian!(reshape(∇c,M,N),tmp_both,zeros(M),Z)
         # ∇stage_constraints_robust_both!(∇c,Z,n,m,N,T,idx,nw,w0,model,integration,
         #     Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
     elseif mode == :state
-        M = num_robust_stage(m_con,n,m,T,mode=:state)
+        M = num_robust_stage(m_stage,n,m,T,mode=:state)
         tmp_state(c,z) = stage_constraints_robust_state!(c,z,n,m,T,idx,nw,w0,model,integration,
-                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
         ForwardDiff.jacobian!(reshape(∇c,M,N),tmp_state,zeros(M),Z)
         # ∇stage_constraints_robust_state!(∇c,Z,n,m,N,T,idx,nw,w0,model,integration,
         #     Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
     elseif mode == :control
-        M = num_robust_stage(m_con,n,m,T,mode=:control)
+        M = num_robust_stage(m_stage,n,m,T,mode=:control)
         tmp_control(c,z) = stage_constraints_robust_control!(c,z,n,m,T,idx,nw,w0,model,integration,
-                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+                Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
         ForwardDiff.jacobian!(reshape(∇c,M,N),tmp_control,zeros(M),Z)
         # ∇stage_constraints_robust_control!(∇c,Z,n,m,N,T,idx,nw,w0,model,integration,
         #     Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
@@ -60,7 +60,7 @@ function ∇stage_constraints_robust!(∇c,Z,n,m,N,T,idx,nw,w0,model,integration
 end
 
 function stage_constraints_robust_both!(c,Z,n,m,T,idx,nw,w0,model,integration,
-        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
 
     δx = compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
@@ -79,17 +79,17 @@ function stage_constraints_robust_both!(c,Z,n,m,T,idx,nw,w0,model,integration,
                 uw⁺ = u + _δu
                 uw⁻ = u - _δu
 
-                con(view(c,shift .+ (1:m_con)),xw⁺,uw⁺)
-                shift += m_con
+                c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁺,uw⁺,t)
+                shift += m_stage[t]
 
-                con(view(c,shift .+ (1:m_con)),xw⁺,uw⁻)
-                shift += m_con
+                c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁺,uw⁻,t)
+                shift += m_stage[t]
 
-                con(view(c,shift .+ (1:m_con)),xw⁻,uw⁺)
-                shift += m_con
+                c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁻,uw⁺,t)
+                shift += m_stage[t]
 
-                con(view(c,shift .+ (1:m_con)),xw⁻,uw⁻)
-                shift += m_con
+                c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁻,uw⁻,t)
+                shift += m_stage[t]
             end
         end
     end
@@ -196,7 +196,7 @@ end
 # end
 
 function stage_constraints_robust_state!(c,Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D,
-        con,m_con)
+        m_stage)
 
     δx = compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     # δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
@@ -215,14 +215,14 @@ function stage_constraints_robust_state!(c,Z,n,m,T,idx,nw,w0,model,integration,Q
                 # uw⁺ = u + _δu
                 # uw⁻ = u - _δu
 
-            con(view(c,shift .+ (1:m_con)),xw⁺,u)
-            shift += m_con
+            c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁺,u,t)
+            shift += m_stage[t]
 
                 # con(view(c,shift .+ (1:m_con)),xw⁺,uw⁻)
                 # shift += m_con
 
-            con(view(c,shift .+ (1:m_con)),xw⁻,u)
-            shift += m_con
+            c_stage!(view(c,shift .+ (1:m_stage[t])),xw⁻,u,t)
+            shift += m_stage[t]
 
                 # con(view(c,shift .+ (1:m_con)),xw⁻,uw⁻)
                 # shift += m_con
@@ -332,7 +332,7 @@ end
 # end
 
 function stage_constraints_robust_control!(c,Z,n,m,T,idx,nw,w0,model,integration,
-        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,con,m_con)
+        Q_lqr,R_lqr,Qw,Rw,E1,H1,D,m_stage)
 
     # δx = compute_δx(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
     δu = compute_δu(Z,n,m,T,idx,nw,w0,model,integration,Q_lqr,R_lqr,Qw,Rw,E1,H1,D)
@@ -351,11 +351,11 @@ function stage_constraints_robust_control!(c,Z,n,m,T,idx,nw,w0,model,integration
             uw⁺ = u + _δu
             uw⁻ = u - _δu
 
-            con(view(c,shift .+ (1:m_con)),x,uw⁺)
-            shift += m_con
+            c_stage!(view(c,shift .+ (1:m_stage[t])),x,uw⁺,t)
+            shift += m_stage[t]
 
-            con(view(c,shift .+ (1:m_con)),x,uw⁻)
-            shift += m_con
+            c_stage!(view(c,shift .+ (1:m_stage[t])),x,uw⁻,t)
+            shift += m_stage[t]
 
             # con(view(c,shift .+ (1:m_con)),xw⁻,uw⁺)
             # shift += m_con

@@ -23,7 +23,7 @@ function robust_problem(prob,nw,Q_lqr,R_lqr,Qw,Rw,E1,H1,D;
 
         M_robust_control_bnds = robust_control_bnds*num_robust_control_bounds(prob.m,prob.T)
         M_robust_state_bnds = robust_state_bnds*num_robust_state_bounds(prob.n,prob.T)
-        M_robust_stage = num_robust_stage(prob.m_con,prob.n,prob.m,prob.T,mode=robust_stage)
+        M_robust_stage = num_robust_stage(prob.m_stage,prob.n,prob.m,prob.T,mode=robust_stage)
 
         M_robust = M_robust_control_bnds + M_robust_state_bnds + M_robust_stage
 
@@ -62,7 +62,7 @@ function constraints_robust!(cw,Z,prob_robust::RobustProblem)
             prob.integration,prob_robust.Q_lqr,prob_robust.R_lqr,
             prob_robust.Qw,prob_robust.Rw,
             prob_robust.E1,prob_robust.H1,prob_robust.D,
-            prob.con,prob.m_con,
+            prob.m_stage,
             mode=prob_robust.robust_stage)
     end
 
@@ -106,7 +106,7 @@ function constraints_robust_jacobian!(∇cw,Z,prob_robust::RobustProblem)
             prob.model,prob.integration,prob_robust.Q_lqr,prob_robust.R_lqr,
             prob_robust.Qw,prob_robust.Rw,
             prob_robust.E1,prob_robust.H1,prob_robust.D,
-            prob.con,prob.m_con,
+            prob.m_stage,
             mode=prob_robust.robust_stage)
     end
 

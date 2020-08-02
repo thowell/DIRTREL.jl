@@ -13,27 +13,27 @@ hu = Inf
 hl = 0.0
 
 # Initial and final states
-x1 = [0.0; 0.0]
-xT = [π; 0.0]
+x1 = @SVector [0.0, 0.0]
+xT = @SVector [π, 0.0]
 
 # Horizon
 T = 51
 
 # Objective (minimum time)
-Q = [Diagonal(zeros(model.nx)) for t = 1:T]
-R = [Diagonal(zeros(model.nu)) for t = 1:T-1]
+Q = [Diagonal(@SVector zeros(model.nx)) for t = 1:T]
+R = [Diagonal(@SVector zeros(model.nu)) for t = 1:T-1]
 c = 1.0
 obj = QuadraticTrackingObjective(Q,R,c,
     [zeros(model.nx) for t=1:T],[zeros(model.nu) for t=1:T])
 
 # Initial disturbances
-E1 = Diagonal(1.0e-6*ones(model.nx))
-H1 = zeros(model.nx,model.nw)
-D = Diagonal([0.2^2])
+E1 = Diagonal(1.0e-6* @SVector ones(model.nx))
+H1 = @SMatrix zeros(model.nx,model.nw)
+D = Diagonal(@SVector [0.2^2])
 
 # TVLQR cost
-Q_lqr = [t < T ? Diagonal([10.0;1.0]) : Diagonal([100.0; 100.0]) for t = 1:T]
-R_lqr = [Diagonal(0.1*ones(model.nu)) for t = 1:T-1]
+Q_lqr = [t < T ? Diagonal(@SVector [10.0, 1.0]) : Diagonal(@SVector [100.0, 100.0]) for t = 1:T]
+R_lqr = [Diagonal(0.1*@SVector ones(model.nu)) for t = 1:T-1]
 
 # Robust cost
 Qw = deepcopy(Q_lqr)

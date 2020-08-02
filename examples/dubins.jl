@@ -33,14 +33,14 @@ xc4 = 0.75
 yc4 = 0.75
 
 # Constraints
-function con_obstacles!(c,x,u)
+function c_stage!(c,x,u,t)
     c[1] = circle_obs(x[1],x[2],xc1,yc1,r)
     c[2] = circle_obs(x[1],x[2],xc2,yc2,r)
     c[3] = circle_obs(x[1],x[2],xc3,yc3,r)
     c[4] = circle_obs(x[1],x[2],xc4,yc4,r)
     nothing
 end
-m_con_obstacles = 4
+m_stage = 4
 
 # Objective
 Q = [t < T ? Diagonal(zeros(model.nx)) : Diagonal(zeros(model.nx)) for t = 1:T]
@@ -70,8 +70,8 @@ prob = init_problem(model.nx,model.nu,T,x1,xT,model,obj,
                     hu=[hu for t=1:T-1],
                     integration=rk3_implicit,
                     goal_constraint=true,
-                    con=con_obstacles!,
-                    m_con=m_con_obstacles
+                    stage_constraints=true,
+                    m_stage=[m_stage for t=1:T-1],
                     )
 
 # Robust problem
@@ -88,7 +88,7 @@ prob_robust_moi = init_MOI_RobustProblem(prob_robust)
 
 # Trajectory initialization
 X0 = linear_interp(x1,xT,T) # linear interpolation on state
-U0 = [0.01*rand(model.nu) for t = 1:T-1] # random controls
+U0 = [0.1*rand(model.nu) for t = 1:T-1] # random controls
 
 # Pack trajectories into vector
 Z0 = pack(X0,U0,h0,prob)

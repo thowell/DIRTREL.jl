@@ -4,13 +4,12 @@ mutable struct Cartpole{T}
     l::T  # length of the pole in m
     g::T  # gravity m/s^2
     μ::T  # friction coefficient
-    f::Function
     nx
     nu
     nw
 end
 
-function cartpole_dynamics(model::Cartpole, x, u, w)
+function dynamics(model::Cartpole, x, u, w)
     H = @SMatrix [model.mc+model.mp model.mp*model.l*cos(x[2]); model.mp*model.l*cos(x[2]) model.mp*model.l^2]
     C = @SMatrix [0.0 -model.mp*x[4]*model.l*sin(x[2]); 0.0 0.0]
     G = @SVector [0.0, model.mp*model.g*model.l*sin(x[2])]
@@ -21,4 +20,4 @@ function cartpole_dynamics(model::Cartpole, x, u, w)
 end
 
 nx,nu,nw = 4,1,1
-model = Cartpole(1.0,0.2,0.5,9.81,0.1,cartpole_dynamics,nx,nu,nw)
+model = Cartpole(1.0,0.2,0.5,9.81,0.1,nx,nu,nw)

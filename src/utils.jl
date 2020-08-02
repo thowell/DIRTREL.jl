@@ -1,13 +1,11 @@
-function matrix_sqrt(A)
+function matrix_sqrt(A;ϵ=1.0e-3)
     e = eigen(A)
-
     for (i,ee) in enumerate(e.values)
         if ee < 0.0
-            e.values[i] = 1.0e-3
+            e.values[i] = ϵ
         end
     end
-    # return e.vectors*Diagonal(sqrt.(e.values))*inv(e.vectors)
-    return Diagonal(sqrt.(e.values))*e.vectors'
+    return e.vectors*Diagonal(sqrt.(e.values))*inv(e.vectors)
 end
 
 function fastsqrt(A)
@@ -16,10 +14,10 @@ function fastsqrt(A)
     #S = sqrtm(A);
     Ep = 1e-8*Matrix(I,size(A))
 
-    # if count(diag(A) .> 0.0) != size(A,1)
-    #     S = diagm(sqrt.(diag(A)));
-    #     return S
-    # end
+    if count(diag(A) .> 0.0) != size(A,1)
+        S = diagm(sqrt.(diag(A)));
+        return S
+    end
 
     In = Matrix(1.0*I,size(A));
     S = A;
